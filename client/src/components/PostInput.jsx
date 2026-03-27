@@ -1,0 +1,319 @@
+import React, { useState, useContext, useRef } from 'react';
+import { Image, Video, Calendar, FileText, X, Clock, MapPin, ExternalLink } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import api from '../services/api';
+
+const DEV_EVENTS = [
+  { id: 1, title: 'React Summit 2026', date: '2026-06-15', location: 'Amsterdam', desc: 'The biggest React conference in the world' },
+  { id: 2, title: 'NodeConf EU', date: '2026-07-10', location: 'Kilkenny, Ireland', desc: 'Europe\'s premier Node.js conference' },
+  { id: 3, title: 'Google I/O Extended', date: '2026-05-20', location: 'Virtual', desc: 'Developer festival with hands-on workshops' },
+  { id: 4, title: 'AWS re:Invent', date: '2026-11-28', location: 'Las Vegas', desc: 'Cloud computing mega event by Amazon' },
+  { id: 5, title: 'JSConf India', date: '2026-08-12', location: 'Bengaluru', desc: 'JavaScript community conference in India' },
+  { id: 6, title: 'PyCon US 2026', date: '2026-04-23', location: 'Pittsburgh', desc: 'Largest gathering of the Python community' },
+  { id: 7, title: 'DockerCon', date: '2026-09-18', location: 'San Francisco', desc: 'Containerization and DevOps innovation' },
+  { id: 8, title: 'MongoDB World', date: '2026-06-07', location: 'New York', desc: 'The premier event for MongoDB developers' },
+  { id: 9, title: 'GitHub Universe', date: '2026-10-29', location: 'San Francisco', desc: 'The developer event of the year' },
+  { id: 10, title: 'KubeCon Europe', date: '2026-04-01', location: 'Paris', desc: 'Cloud native computing conference' },
+  { id: 11, title: 'VueConf US', date: '2026-05-14', location: 'Tampa', desc: 'Official Vue.js conference in the US' },
+  { id: 12, title: 'RustConf', date: '2026-09-05', location: 'Portland', desc: 'Annual Rust programming language conference' },
+  { id: 13, title: 'GraphQL Summit', date: '2026-10-07', location: 'San Diego', desc: 'World\'s largest GraphQL conference' },
+  { id: 14, title: 'DevOps Days London', date: '2026-03-26', location: 'London', desc: 'Community-run DevOps conference' },
+  { id: 15, title: 'Next.js Conf', date: '2026-10-25', location: 'Virtual', desc: 'Vercel\'s annual Next.js conference' },
+];
+
+const PostInput = ({ onPostCreated }) => {
+  const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
+  const [content, setContent] = useState('');
+  const [image, setImage] = useState(null);
+  const [video, setVideo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+
+  // Modal states
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [showArticleModal, setShowArticleModal] = useState(false);
+
+  // Event form
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventDate, setEventDate] = useState('');
+  const [eventDesc, setEventDesc] = useState('');
+
+  // Article form
+  const [articleTitle, setArticleTitle] = useState('');
+  const [articleContent, setArticleContent] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!content.trim() && !image && !video) return;
+
+    setLoading(true);
+    try {
+      let imageUrl = '';
+      let videoUrl = '';
+
+      if (image) {
+        const formData = new FormData();
+        formData.append('image', image);
+        const uploadRes = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        imageUrl = uploadRes.data.url;
+      }
+
+      if (video) {
+        const formData = new FormData();
+        formData.append('image', video);
+        const uploadRes = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        videoUrl = uploadRes.data.url;
+      }
+
+      const res = await api.post('/posts', { content, image: imageUrl, video: videoUrl });
+      setContent('');
+      setImage(null);
+      setVideo(null);
+      if (onPostCreated) onPostCreated(res.data);
+    } catch (error) {
+      console.error('Failed to create post', error);
+      showToast('Failed to create post', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    if (e.target.files?.[0]) setImage(e.target.files[0]);
+  };
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      showToast('Please select a video file', 'error');
+      return;
+    }
+    setVideo(file);
+  };
+
+  const handleSubmitEvent = async () => {
+    if (!eventTitle.trim() || !eventDate) {
+      showToast('Please fill event title and date', 'error');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.post('/posts', {
+        content: eventDesc || `📅 Event: ${eventTitle}`,
+        postType: 'event',
+        eventTitle,
+        eventDate,
+      });
+      setShowEventModal(false);
+      setEventTitle('');
+      setEventDate('');
+      setEventDesc('');
+      if (onPostCreated) onPostCreated(res.data);
+      showToast('Event scheduled!');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to schedule event', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitArticle = async () => {
+    if (!articleTitle.trim() || !articleContent.trim()) {
+      showToast('Please fill article title and content', 'error');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.post('/posts', {
+        content: articleContent,
+        postType: 'article',
+        articleTitle,
+      });
+      setShowArticleModal(false);
+      setArticleTitle('');
+      setArticleContent('');
+      if (onPostCreated) onPostCreated(res.data);
+      showToast('Article published!');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to publish article', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-4">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 sm:gap-3">
+          <img 
+            src={user?.profilePic || `https://i.pravatar.cc/150?u=${user?.username || 'me'}`} 
+            alt="Profile" 
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm border border-gray-100 shrink-0"
+          />
+          <input 
+            type="text"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Start a post..."
+            className="flex-1 min-w-0 bg-gray-100 hover:bg-gray-200 border border-transparent focus:border-gray-300 focus:bg-white rounded-full px-3 sm:px-5 py-2.5 sm:py-3 text-gray-700 outline-none transition-all text-sm sm:text-base"
+          />
+          <button 
+            type="submit" 
+            disabled={(!content.trim() && !image && !video) || loading}
+            className="bg-primary text-white font-semibold px-3 sm:px-4 py-2 rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors active:scale-95 shrink-0 whitespace-nowrap text-sm sm:text-base"
+          >
+            {loading ? 'Posting...' : 'Post'}
+          </button>
+        </form>
+
+        {/* Image preview */}
+        {image && (
+          <div className="mt-3 relative inline-block">
+            <img src={URL.createObjectURL(image)} alt="Preview" className="h-32 rounded-lg object-cover" />
+            <button onClick={() => setImage(null)} className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1 text-xs hover:bg-gray-700">✕</button>
+          </div>
+        )}
+
+        {/* Video preview */}
+        {video && (
+          <div className="mt-3 relative inline-block">
+            <video src={URL.createObjectURL(video)} className="h-32 rounded-lg" controls />
+            <button onClick={() => setVideo(null)} className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1 text-xs hover:bg-gray-700">✕</button>
+          </div>
+        )}
+        
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 mt-3 pt-2">
+          <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleImageChange} />
+          <input type="file" accept="video/*" ref={videoInputRef} className="hidden" onChange={handleVideoChange} />
+
+          <button 
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-2 py-2.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 font-medium text-sm w-full justify-center lg:justify-start lg:w-auto active:scale-95"
+          >
+            <Image className="text-[#378fe9] w-5 h-5" />
+            <span className="hidden sm:inline">Media</span>
+          </button>
+          <button 
+            type="button"
+            onClick={() => videoInputRef.current?.click()}
+            className="flex items-center gap-2 px-2 py-2.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 font-medium text-sm w-full justify-center lg:justify-start lg:w-auto active:scale-95"
+          >
+            <Video className="text-[#5f9b41] w-5 h-5" />
+            <span className="hidden sm:inline">Video</span>
+          </button>
+          <button 
+            type="button"
+            onClick={() => setShowEventModal(true)}
+            className="flex items-center gap-2 px-2 py-2.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 font-medium text-sm w-full justify-center lg:justify-start lg:w-auto active:scale-95"
+          >
+            <Calendar className="text-[#c37d16] w-5 h-5" />
+            <span className="hidden sm:inline">Event</span>
+          </button>
+          <button 
+            type="button"
+            onClick={() => setShowArticleModal(true)}
+            className="flex items-center gap-2 px-2 py-2.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 font-medium text-sm w-full justify-center lg:justify-start lg:w-auto active:scale-95"
+          >
+            <FileText className="text-[#e16745] w-5 h-5" />
+            <span className="hidden sm:inline">Write article</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── EVENT MODAL ── */}
+      {showEventModal && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowEventModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Calendar className="w-5 h-5 text-[#c37d16]" /> Schedule an Event</h2>
+              <button onClick={() => setShowEventModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Event Title</label>
+                <input type="text" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="e.g. React Workshop" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Event Date</label>
+                <input type="datetime-local" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description (optional)</label>
+                <textarea value={eventDesc} onChange={(e) => setEventDesc(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none" rows={3} placeholder="Tell people about this event..." />
+              </div>
+
+              <div className="flex items-center justify-end">
+                <button onClick={handleSubmitEvent} disabled={loading} className="bg-[#c37d16] text-white font-semibold px-6 py-2.5 rounded-full hover:bg-[#a96b12] transition-colors disabled:opacity-50 active:scale-95">
+                  {loading ? 'Scheduling...' : '📅 Schedule Event'}
+                </button>
+              </div>
+
+              {/* Pre-populated dev events */}
+              <div className="border-t border-gray-100 pt-5">
+                <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><Clock className="w-4 h-4 text-gray-500" /> Upcoming Dev Events</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+                  {DEV_EVENTS.map(ev => (
+                    <div key={ev.id} className="border border-gray-100 rounded-xl p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+                      <h4 className="font-semibold text-sm text-gray-900 group-hover:text-primary transition-colors">{ev.title}</h4>
+                      <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> {ev.location}</p>
+                      <p className="text-xs text-gray-600 mt-1">{ev.desc}</p>
+                      <button className="mt-2 text-xs font-semibold text-white bg-primary rounded-full px-3 py-1 hover:bg-blue-700 transition-colors active:scale-95 flex items-center gap-1">
+                        <ExternalLink className="w-3 h-3" /> Register Now
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ARTICLE MODAL ── */}
+      {showArticleModal && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowArticleModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><FileText className="w-5 h-5 text-[#e16745]" /> Write an Article</h2>
+              <button onClick={() => setShowArticleModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Article Title</label>
+                <input type="text" value={articleTitle} onChange={(e) => setArticleTitle(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Give your article a compelling title..." />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Content</label>
+                <textarea value={articleContent} onChange={(e) => setArticleContent(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none leading-relaxed" rows={12} placeholder="Write your article here... Share your knowledge, insights, and experience with the community." />
+                <p className="text-xs text-gray-400 mt-1 text-right">{articleContent.length} characters</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+              <button onClick={() => setShowArticleModal(false)} className="border border-gray-400 text-gray-600 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition-colors">Cancel</button>
+              <button onClick={handleSubmitArticle} disabled={loading} className="bg-[#e16745] text-white font-semibold px-6 py-2 rounded-full hover:bg-[#c9553a] transition-colors disabled:opacity-50 active:scale-95">
+                {loading ? 'Publishing...' : '📝 Publish Article'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default PostInput;

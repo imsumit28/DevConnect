@@ -1,0 +1,28 @@
+const express = require('express');
+const router = express.Router();
+const { 
+  getUserProfile,
+  getMyProfile,
+  updateUserProfile, 
+  followUser, 
+  unfollowUser,
+  searchUsers,
+  getAllUsers,
+  getUserActivity,
+  viewProfile,
+  checkUsernameAvailability
+} = require('../controllers/userController');
+const { protect } = require('../middleware/auth');
+
+router.get('/search', searchUsers);
+router.get('/check-username/:username', checkUsernameAvailability);
+router.get('/', getAllUsers);
+router.get('/me/profile', protect, getMyProfile);
+router.get('/:username', getUserProfile);
+router.put('/:username/view', viewProfile);
+router.get('/:userId/activity', getUserActivity);
+router.put('/profile', protect, updateUserProfile);
+router.put('/:id/follow', protect, followUser);
+router.put('/:id/unfollow', protect, unfollowUser);
+
+module.exports = router;

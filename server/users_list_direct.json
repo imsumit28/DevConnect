@@ -1,0 +1,91 @@
+[
+  {
+    "_id": "69c1783e23f3a5334e21e672",
+    "username": "Sumit Kumar",
+    "email": "sumit@gmail.com",
+    "profilePic": "/avatars/avatar_1.png"
+  },
+  {
+    "_id": "69c24fb423f3a5334e21ef14",
+    "username": "Developer One",
+    "email": "developer1@example.com",
+    "profilePic": "/avatars/avatar_1.png"
+  },
+  {
+    "_id": "69c282cb28e54ac588fa95e7",
+    "username": "aman_gupta137",
+    "name": "Aman Gupta",
+    "email": "aman@devconnect.com",
+    "profilePic": "/avatars/avatar_1.png"
+  },
+  {
+    "_id": "69c289fb980866340351925c",
+    "username": "dev_alex",
+    "name": "Alex Johnson",
+    "email": "alex@test.com",
+    "profilePic": "/avatars/avatar_1.png"
+  },
+  {
+    "_id": "69c289fb980866340351925e",
+    "username": "backend_bob",
+    "name": "Bob Miller",
+    "email": "bob@test.com",
+    "profilePic": "/avatars/avatar_2.png"
+  },
+  {
+    "_id": "69c289fb9808663403519260",
+    "username": "clara_codes",
+    "name": "Clara Davis",
+    "email": "clara@test.com",
+    "profilePic": "/avatars/avatar_4.png"
+  },
+  {
+    "_id": "69c289fb9808663403519262",
+    "username": "daniel_dev",
+    "name": "Daniel Smith",
+    "email": "daniel@test.com",
+    "profilePic": "/avatars/avatar_3.png"
+  },
+  {
+    "_id": "69c289fb9808663403519264",
+    "username": "evie_tech",
+    "name": "Evie Brown",
+    "email": "evie@test.com",
+    "profilePic": "/avatars/avatar_2.png"
+  },
+  {
+    "_id": "69c289fc9808663403519266",
+    "username": "frank_fullstack",
+    "name": "Frank Wilson",
+    "email": "frank@test.com",
+    "profilePic": "/avatars/avatar_1.png"
+  },
+  {
+    "_id": "69c289fc9808663403519268",
+    "username": "grace_hopper_fan",
+    "name": "Grace Taylor",
+    "email": "grace@test.com",
+    "profilePic": "/avatars/avatar_4.png"
+  },
+  {
+    "_id": "69c289fc980866340351926a",
+    "username": "hank_hardware",
+    "name": "Hank Moore",
+    "email": "hank@test.com",
+    "profilePic": "/avatars/avatar_3.png"
+  },
+  {
+    "_id": "69c289fc980866340351926c",
+    "username": "iris_web",
+    "name": "Iris Clark",
+    "email": "iris@test.com",
+    "profilePic": "/avatars/avatar_2.png"
+  },
+  {
+    "_id": "69c289fc980866340351926e",
+    "username": "jack_of_all_trades",
+    "name": "Jack Lewis",
+    "email": "jack@test.com",
+    "profilePic": "/avatars/avatar_1.png"
+  }
+]

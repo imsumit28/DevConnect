@@ -1,0 +1,32 @@
+const express = require('express');
+const router = express.Router();
+const {
+  createPost,
+  getPosts,
+  getPostsByUserId,
+  likePost,
+  addComment,
+  toggleCommentLike,
+  addCommentReply,
+  deletePost,
+  logActivity,
+  togglePinPost,
+  getPinnedPost,
+  repostPost
+} = require('../controllers/postController');
+const { protect } = require('../middleware/auth');
+
+router.post('/', protect, createPost);
+router.get('/', protect, getPosts);
+router.get('/pinned/:userId', protect, getPinnedPost);
+router.get('/user/:userId', protect, getPostsByUserId);
+router.post('/activity', protect, logActivity);
+router.put('/:id/like', protect, likePost);
+router.put('/:id/pin', protect, togglePinPost);
+router.post('/:id/repost', protect, repostPost);
+router.post('/:id/comment', protect, addComment);
+router.put('/:id/comments/:commentId/like', protect, toggleCommentLike);
+router.post('/:id/comments/:commentId/reply', protect, addCommentReply);
+router.delete('/:id', protect, deletePost);
+
+module.exports = router;

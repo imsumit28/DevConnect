@@ -1,0 +1,320 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0b6bcb;
+  --color-background: #eef3f8;
+  --color-card: #ffffff;
+  --color-secondary: #16a085;
+  --color-highlight: #ff8f3f;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(11, 107, 203, 0.07), transparent 32%),
+    radial-gradient(circle at 88% 22%, rgba(22, 160, 133, 0.06), transparent 30%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@keyframes slide-up {
+  0% { transform: translate(-50%, 100%); opacity: 0; }
+  100% { transform: translate(-50%, 0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes scale-in {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-in forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+
+/* Global Hover Effects & Transitions */
+button, .btn {
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover:not(:disabled), .btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled), .btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+}
+
+/* Page transition */
+.page-transition {
+  animation: page-enter 0.3s ease-out;
+}
+
+@keyframes page-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Profile link hover glow */
+a[href*="/profile"] {
+  transition: all 0.2s ease;
+}
+
+/* ── Micro-Interactions ── */
+
+/* Hover glow for interactive cards */
+.bg-white {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.bg-white:hover {
+  box-shadow: 0 4px 20px rgba(10, 102, 194, 0.08);
+}
+
+/* Button ripple / press effect */
+button {
+  position: relative;
+  overflow: hidden;
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 10.01%);
+  transform: scale(10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 0.4s;
+}
+
+button:active::after {
+  transform: scale(0);
+  opacity: 1;
+  transition: 0s;
+}
+
+/* Smooth focus ring */
+input:focus, textarea:focus, select:focus {
+  border-color: #0073b1;
+  box-shadow: 0 0 0 2px rgba(0, 115, 177, 0.2);
+  transition: box-shadow 0.2s ease;
+}
+
+/* Skeleton loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* Smooth link transitions */
+a {
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+/* Image hover zoom */
+img {
+  transition: transform 0.3s ease;
+}
+
+/* Toast slide-in */
+@keyframes toast-in {
+  0% { transform: translate(-50%, 100%) scale(0.9); opacity: 0; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+
+.animate-toast {
+  animation: toast-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes heart-burst {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(0.9); }
+  75% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.animate-heart-burst {
+  animation: heart-burst 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes action-pop {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-action-pop {
+  animation: action-pop 0.3s ease-out forwards;
+}
+
+/* Pin glow */
+@keyframes pin-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(10, 102, 194, 0.2); }
+  50% { box-shadow: 0 0 0 6px rgba(10, 102, 194, 0); }
+}
+
+.pinned-glow {
+  animation: pin-glow 2s ease-in-out infinite;
+}
+
+.auth-brand-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.auth-logo {
+  max-width: 300px;
+}
+
+.auth-primary-btn {
+  background: linear-gradient(to right, #0073b1, #0a66c2);
+}
+
+.auth-input:focus {
+  border-color: #0073b1;
+  box-shadow: 0 0 0 2px rgba(0, 115, 177, 0.2);
+}
+
+@keyframes auth-float {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0) scale(1.02);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes auth-card-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-auth-float {
+  animation: auth-float 6s ease-in-out infinite;
+}
+
+.animate-auth-float-delayed {
+  animation: auth-float 7s ease-in-out infinite 0.6s;
+}
+
+.animate-auth-card {
+  animation: auth-card-enter 0.6s ease-out;
+}
+
+@keyframes auth-switch-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-switch-enter {
+  animation: auth-switch-enter 0.24s ease;
+}
+
+.auth-grid-overlay {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.brand-badge {
+  border: 1px solid rgba(11, 107, 203, 0.22);
+  background: linear-gradient(130deg, rgba(11, 107, 203, 0.14), rgba(22, 160, 133, 0.14));
+  color: #0b466e;
+}
+
+.dc-interact {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.dc-interact:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 10px 22px -14px rgba(11, 107, 203, 0.55);
+}
+
+.dc-interact:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@keyframes brand-pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 0.75; }
+  50% { transform: scale(1.35); opacity: 1; }
+}
+
+.brand-pulse-dot {
+  animation: brand-pulse-dot 1.6s ease-in-out infinite;
+}
+
+@media (max-width: 640px) {
+  .auth-logo {
+    max-width: 240px;
+  }
+}
