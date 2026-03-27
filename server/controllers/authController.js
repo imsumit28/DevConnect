@@ -16,6 +16,32 @@ const getClientBaseUrl = () =>
     .map((origin) => origin.trim())
     .filter(Boolean)[0] || 'http://localhost:5173';
 
+const normalizeUrl = (value = '') => String(value).trim().replace(/\/+$/, '');
+const forceHttpsForHostedUrl = (value = '') => {
+  const normalized = normalizeUrl(value);
+  if (!normalized) return '';
+  return normalized.replace(/^http:\/\/(.+\.(?:onrender\.com|vercel\.app))/i, 'https://$1');
+};
+
+const getServerBaseUrl = (req) => {
+  const explicit = forceHttpsForHostedUrl(process.env.SERVER_URL || '');
+  if (explicit) return explicit;
+  const host = req.get('host');
+  const forwardedProto = (req.headers['x-forwarded-proto'] || '')
+    .toString()
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+  const proto = forwardedProto || ((host || '').includes('onrender.com') ? 'https' : (req.protocol || 'http'));
+  return `${proto}://${host}`;
+};
+
+const getGoogleRedirectUri = (req) => {
+  const fromEnv = forceHttpsForHostedUrl(process.env.GOOGLE_REDIRECT_URI || '');
+  if (fromEnv) return fromEnv;
+  return `${getServerBaseUrl(req)}/api/auth/google/callback`;
+};
+
 const generateUniqueUsername = async (baseValue) => {
   const sanitizedBase = (baseValue || 'devconnect_user')
     .toLowerCase()
@@ -162,7 +188,7 @@ exports.login = async (req, res) => {
 // @access  Public
 exports.googleAuthStart = async (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+  const redirectUri = getGoogleRedirectUri(req);
   const mode = req.query.mode === 'register' ? 'register' : 'login';
 
   if (!clientId) {
@@ -191,7 +217,7 @@ exports.googleAuthCallback = async (req, res) => {
     const mode = req.query.state === 'register' ? 'register' : 'login';
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+    const redirectUri = getGoogleRedirectUri(req);
 
     if (!code) {
       return res.redirect(`${getClientBaseUrl()}/${mode}?oauthError=missing_code`);
