@@ -8,6 +8,7 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { io } from 'socket.io-client';
+import { socketUrl } from '../utils/runtimeConfig';
 
 const Profile = () => {
   const { user: currentUser, updateUser } = useContext(AuthContext); 
@@ -132,7 +133,7 @@ const Profile = () => {
         return p;
       });
 
-    const socket = io('http://localhost:5000');
+    const socket = io(socketUrl);
     if (currentUser?._id) {
        socket.emit('join', currentUser._id);
     }

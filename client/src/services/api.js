@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { apiBaseUrl } from '../utils/runtimeConfig';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: apiBaseUrl,
 });
 
 // Add a request interceptor

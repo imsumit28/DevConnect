@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { io } from 'socket.io-client';
 import { BadgeCheck, Users, Link2, Eye, MessageCircle, Sparkles } from 'lucide-react';
+import { socketUrl } from '../utils/runtimeConfig';
 
 const Sidebar = () => {
   const { user } = useContext(AuthContext);
@@ -15,7 +16,7 @@ const Sidebar = () => {
         .then(res => setProfileData(res.data))
         .catch(err => console.error('Failed to load profile data', err));
         
-      const socket = io('http://localhost:5000');
+      const socket = io(socketUrl);
       socket.on('profile_viewed', (newViewCount) => {
         setProfileData(prev => prev ? { ...prev, profileViews: newViewCount } : prev);
       });

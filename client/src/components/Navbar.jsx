@@ -8,6 +8,7 @@ import NotificationDropdown from './NotificationDropdown';
 import NotificationBell from './NotificationBell';
 import { io } from 'socket.io-client';
 import { useToast } from '../context/ToastContext';
+import { socketUrl } from '../utils/runtimeConfig';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -25,7 +26,7 @@ const Navbar = () => {
   useEffect(() => {
     if (user?._id) {
       // Socket Join
-      const socket = io('http://localhost:5000');
+      const socket = io(socketUrl);
       socket.emit('join', user._id);
 
       socket.on('new_notification', (notif) => {

@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { socketUrl } from '../utils/runtimeConfig';
 
 const getId = (value) => {
   if (!value) return '';
@@ -100,7 +101,7 @@ const Messages = () => {
 
   useEffect(() => {
     if (!currentUserId) return;
-    const socket = io('http://localhost:5000');
+    const socket = io(socketUrl);
     socket.emit('join', currentUserId);
 
     socket.on('new_message', (msg) => {

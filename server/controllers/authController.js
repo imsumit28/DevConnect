@@ -10,7 +10,11 @@ const generateToken = (id) => {
   });
 };
 
-const getClientBaseUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
+const getClientBaseUrl = () =>
+  (process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)[0] || 'http://localhost:5173';
 
 const generateUniqueUsername = async (baseValue) => {
   const sanitizedBase = (baseValue || 'devconnect_user')

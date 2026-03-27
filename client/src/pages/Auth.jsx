@@ -4,6 +4,7 @@ import { AtSign, CheckCircle2, Eye, EyeOff, Loader2, Lock, Mail, User, XCircle }
 import Logo from '../components/Logo';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
+import { apiOrigin } from '../utils/runtimeConfig';
 
 const GoogleIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -17,7 +18,7 @@ const GoogleIcon = () => (
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiBase = apiOrigin;
   const isLoginMode = location.pathname === '/login';
   const mode = isLoginMode ? 'login' : 'register';
   const { login, register } = useContext(AuthContext);

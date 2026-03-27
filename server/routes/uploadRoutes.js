@@ -9,8 +9,9 @@ const { protect } = require('../middleware/auth');
 router.post('/', protect, upload.single('image'), (req, res) => {
   try {
     if (req.file) {
-      // Returning the local URL
-      res.json({ url: `http://localhost:5000/uploads/${req.file.filename}` });
+      // Return absolute URL for local storage uploads.
+      const baseUrl = process.env.SERVER_URL || `${req.protocol}://${req.get('host')}`;
+      res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
     } else {
       res.status(400).json({ message: 'No image uploaded' });
     }

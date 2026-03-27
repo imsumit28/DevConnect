@@ -9,6 +9,7 @@ import { io } from 'socket.io-client';
 import { Link, useLocation } from 'react-router-dom';
 import { FilterX } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import { socketUrl } from '../utils/runtimeConfig';
 
 const Home = () => {
   const { user: currentUser } = useContext(AuthContext);
@@ -63,7 +64,7 @@ const Home = () => {
 
     fetchPosts();
 
-    const socket = io('http://localhost:5000');
+    const socket = io(socketUrl);
     
     socket.on('postCreated', (newPost) => {
       setPosts((current) => {
