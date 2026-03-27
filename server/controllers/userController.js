@@ -114,6 +114,7 @@ exports.updateUserProfile = async (req, res) => {
       if (req.body.profilePic) user.profilePic = req.body.profilePic;
       if (req.body.coverPic !== undefined) user.coverPic = req.body.coverPic;
       if (req.body.githubUsername !== undefined) user.githubUsername = req.body.githubUsername;
+      if (Array.isArray(req.body.projects)) user.projects = req.body.projects;
 
       const updatedUser = await user.save();
 
@@ -127,6 +128,7 @@ exports.updateUserProfile = async (req, res) => {
         profilePic: updatedUser.profilePic,
         coverPic: updatedUser.coverPic,
         githubUsername: updatedUser.githubUsername,
+        projects: updatedUser.projects,
         followers: updatedUser.followers,
         following: updatedUser.following,
       });
@@ -135,6 +137,44 @@ exports.updateUserProfile = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Add a project to current user's profile
+// @route   POST /api/users/projects
+// @access  Private
+exports.addUserProject = async (req, res) => {
+  try {
+    const user = await User.findById(req.user);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const title = String(req.body.title || '').trim();
+    const date = String(req.body.date || '').trim();
+    const description = String(req.body.description || '').trim();
+
+    if (!title) {
+      return res.status(400).json({ message: 'Project title is required' });
+    }
+
+    const nextProject = {
+      title,
+      date,
+      description,
+    };
+
+    user.projects = Array.isArray(user.projects) ? user.projects : [];
+    user.projects.unshift(nextProject);
+    await user.save();
+
+    return res.status(201).json({
+      message: 'Project added',
+      project: user.projects[0],
+      projects: user.projects,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

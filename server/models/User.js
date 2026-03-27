@@ -42,6 +42,27 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  projects: [{
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    date: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  }],
   followers: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

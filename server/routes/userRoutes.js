@@ -10,7 +10,8 @@ const {
   getAllUsers,
   getUserActivity,
   viewProfile,
-  checkUsernameAvailability
+  checkUsernameAvailability,
+  addUserProject
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 
@@ -22,6 +23,7 @@ router.get('/:username', getUserProfile);
 router.put('/:username/view', viewProfile);
 router.get('/:userId/activity', getUserActivity);
 router.put('/profile', protect, updateUserProfile);
+router.post('/projects', protect, addUserProject);
 router.put('/:id/follow', protect, followUser);
 router.put('/:id/unfollow', protect, unfollowUser);
 

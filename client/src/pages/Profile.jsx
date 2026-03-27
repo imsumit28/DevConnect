@@ -31,6 +31,13 @@ const Profile = () => {
     skills: '',
     githubUsername: '',
   });
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [projectForm, setProjectForm] = useState({
+    title: '',
+    date: '',
+    description: '',
+  });
+  const [isSavingProject, setIsSavingProject] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   
   const [activityFilter, setActivityFilter] = useState('Posts');
@@ -688,6 +695,36 @@ const Profile = () => {
   const followersCount = countSourceUser?.followers?.length || 0;
   const followingCount = countSourceUser?.following?.length || 0;
   const showDevConnectFounderBadge = String(fullDisplayUser?.email || '').toLowerCase() === 'ersumitkumar45@gmail.com';
+  const profileProjects = Array.isArray(fullDisplayUser?.projects) ? fullDisplayUser.projects : [];
+
+  const handleProjectSubmit = async (e) => {
+    e.preventDefault();
+    const title = String(projectForm.title || '').trim();
+    const date = String(projectForm.date || '').trim();
+    const description = String(projectForm.description || '').trim();
+
+    if (!title) {
+      showToast('Project title is required', 'error');
+      return;
+    }
+
+    setIsSavingProject(true);
+    try {
+      const res = await api.post('/users/projects', { title, date, description });
+      const updatedProjects = Array.isArray(res.data?.projects) ? res.data.projects : [];
+      const nextData = { ...(fullDisplayUser || {}), projects: updatedProjects };
+      setProfileUser(nextData);
+      updateUser({ projects: updatedProjects });
+      setProjectForm({ title: '', date: '', description: '' });
+      setIsProjectModalOpen(false);
+      showToast('Project added successfully');
+    } catch (error) {
+      console.error('Failed to add project', error);
+      showToast('Failed to add project', 'error');
+    } finally {
+      setIsSavingProject(false);
+    }
+  };
 
   const toggleChat = async () => {
     setIsChatOpen(!isChatOpen);
@@ -896,17 +933,40 @@ const Profile = () => {
 
             {/* Projects Section */}
              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-8 hover:shadow-xl transition-all duration-300">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Projects</h2>
-              <div className="border-b border-gray-100 pb-4 mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">DevConnect Social Platform</h3>
-                <p className="text-sm text-gray-500 mb-2">Jan 2026 - Present</p>
-                <p className="text-sm text-gray-700">A full-stack LinkedIn clone built for developers using the MERN stack, featuring real-time chat, image uploads, and JWT authentication.</p>
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Projects</h2>
+                {isOwnProfile && (
+                  <button
+                    type="button"
+                    onClick={() => setIsProjectModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 bg-primary text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Project
+                  </button>
+                )}
               </div>
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold text-gray-800">E-Commerce Microservices</h3>
-                <p className="text-sm text-gray-500 mb-2">Mar 2023 - Dec 2025</p>
-                <p className="text-sm text-gray-700">Engineered a robust e-commerce platform using Node.js microservices, Docker, Kubernetes, and React frontend, scaling to 10k+ concurrent users.</p>
-              </div>
+
+              {profileProjects.length > 0 ? (
+                <div className="space-y-4">
+                  {profileProjects.map((project, index) => (
+                    <div
+                      key={project?._id || `${project?.title || 'project'}-${index}`}
+                      className={index !== profileProjects.length - 1 ? 'border-b border-gray-100 pb-4' : ''}
+                    >
+                      <h3 className="text-lg font-semibold text-gray-800">{project?.title || 'Untitled project'}</h3>
+                      {project?.date && <p className="text-sm text-gray-500 mb-2">{project.date}</p>}
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                        {project?.description || 'No project details were added yet.'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">
+                  No projects yet. Build something awesome and add it here.
+                </div>
+              )}
             </div>
 
             {/* GitHub Repositories Section */}
@@ -1316,6 +1376,72 @@ const Profile = () => {
                 {savingProfile ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isProjectModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[205] flex items-center justify-center p-4 animate-fade-in" onClick={() => setIsProjectModalOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Add Project</h2>
+              <button onClick={() => setIsProjectModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleProjectSubmit} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Project title</label>
+                <input
+                  type="text"
+                  value={projectForm.title}
+                  onChange={(e) => setProjectForm((prev) => ({ ...prev, title: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                  placeholder="e.g. DevConnect Realtime Chat"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Date</label>
+                <input
+                  type="text"
+                  value={projectForm.date}
+                  onChange={(e) => setProjectForm((prev) => ({ ...prev, date: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                  placeholder="e.g. Jan 2026 - Present"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description</label>
+                <textarea
+                  value={projectForm.description}
+                  onChange={(e) => setProjectForm((prev) => ({ ...prev, description: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
+                  rows={4}
+                  placeholder="What did you build, and what impact did it create?"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsProjectModalOpen(false)}
+                  className="border border-gray-400 text-gray-600 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingProject}
+                  className="bg-primary text-white font-semibold px-6 py-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-60"
+                >
+                  {isSavingProject ? 'Adding...' : 'Submit'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
