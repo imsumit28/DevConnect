@@ -10,7 +10,7 @@ DevConnect is a modern developer social network inspired by LinkedIn, built for 
 
 ## Demo
 
-- Live App: [https://your-demo-link-here.com](https://your-demo-link-here.com)
+- Live App: https://devconnect2026.vercel.app/
 - API Base: `http://localhost:5000/api`
 
 ## Features
