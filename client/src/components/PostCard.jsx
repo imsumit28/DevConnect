@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { createPortal } from 'react-dom';
 import api from '../services/api';
@@ -37,6 +37,13 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const displayLikesList = isRepost && Array.isArray(originalPost?.likes) ? originalPost.likes : likesList;
   const displayCommentsList = isRepost && Array.isArray(originalPost?.comments) ? originalPost.comments : commentsList;
   const isOwnRepostCard = Boolean(isRepost) && String(user?.username || '') === String(currentUser?.username || '');
+  const founderEmail = 'ersumitkumar45@gmail.com';
+  const founderUsernames = new Set(['sumitkr', 'ersumitkumar45']);
+  const isFounderAccount = (person) => {
+    const email = String(person?.email || '').toLowerCase().trim();
+    const uname = String(person?.username || '').toLowerCase().trim();
+    return email === founderEmail || founderUsernames.has(uname);
+  };
 
   const [isLiked, setIsLiked] = useState(displayLikesList?.includes(currentUser?._id) || false);
   const [likesCount, setLikesCount] = useState(displayLikesList?.length || 0);
@@ -317,6 +324,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const isArticleCard = displayPostType === 'article';
   const isMediaCard = !isEventCard && !isArticleCard && Boolean(displayImage || displayVideo);
   const typeLabel = isEventCard ? 'Event' : isArticleCard ? 'Article' : isMediaCard ? 'Media' : '';
+  const showPostFounderBadge = isFounderAccount(displayUser);
 
   return (
     <div
@@ -347,10 +355,16 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
           />
         </Link>
         <div className="flex-1">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <Link to={`/profile/${displayUser?.username}`} className="font-extrabold text-gray-900 hover:text-primary cursor-pointer transition-colors leading-tight tracking-tight">
               {displayUser?.name || displayUser?.username || 'Developer'}
             </Link>
+            {showPostFounderBadge && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 shadow-sm">
+                <Sparkles className="w-3 h-3" />
+                Founder
+              </span>
+            )}
             {isActivity && !isRepost && (
               <span className="text-gray-500 text-sm font-normal">
                 {activityType === 'follow' ? 'started following a new developer' :
@@ -581,6 +595,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
               const replyDraft = replyDraftByComment[commentId] || '';
               const commentUsername = c.userId?.username || 'developer';
               const commentName = c.userId?.name || commentUsername;
+              const showCommentFounderBadge = isFounderAccount(c.userId);
 
               return (
                 <div key={commentId} className="flex gap-2">
@@ -589,7 +604,15 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                   </Link>
                   <div className="flex-1">
                     <div className="bg-gray-50 px-3 py-2 rounded-xl rounded-tl-none flex-1 border border-gray-100">
-                      <Link to={`/profile/${commentUsername}`} className="font-semibold text-[11px] text-gray-800 hover:text-primary transition-colors">{commentName}</Link>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <Link to={`/profile/${commentUsername}`} className="font-semibold text-[11px] text-gray-800 hover:text-primary transition-colors">{commentName}</Link>
+                        {showCommentFounderBadge && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            Founder
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[10px] text-gray-500">@{commentUsername} - {formatRelativeTime(c.createdAt)}</p>
                       <p className="text-[11px] text-gray-700 mt-1 leading-relaxed">{c.text}</p>
                     </div>
@@ -653,12 +676,21 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                         {replies.map((reply, idx) => {
                           const replyUsername = reply.userId?.username || 'developer';
                           const replyName = reply.userId?.name || replyUsername;
+                          const showReplyFounderBadge = isFounderAccount(reply.userId);
                           return (
                             <div key={reply?._id || `${commentId}-reply-${idx}`} className="bg-white border border-gray-100 rounded-xl px-3 py-2">
                               <div className="text-[10px] text-gray-500">
-                                <Link to={`/profile/${replyUsername}`} className="font-semibold text-gray-700 hover:text-primary">
-                                  {replyName}
-                                </Link>
+                                <span className="inline-flex items-center gap-1 flex-wrap">
+                                  <Link to={`/profile/${replyUsername}`} className="font-semibold text-gray-700 hover:text-primary">
+                                    {replyName}
+                                  </Link>
+                                  {showReplyFounderBadge && (
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700">
+                                      <Sparkles className="w-2.5 h-2.5" />
+                                      Founder
+                                    </span>
+                                  )}
+                                </span>
                                 <span> @{replyUsername} - {formatRelativeTime(reply.createdAt)}</span>
                               </div>
                               <p className="text-[11px] text-gray-700 mt-0.5">{reply.text}</p>

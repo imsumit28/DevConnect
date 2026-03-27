@@ -680,6 +680,7 @@ const Profile = () => {
   const countSourceUser = isOwnProfile ? currentUser : fullDisplayUser;
   const followersCount = countSourceUser?.followers?.length || 0;
   const followingCount = countSourceUser?.following?.length || 0;
+  const showDevConnectFounderBadge = String(fullDisplayUser?.email || '').toLowerCase() === 'ersumitkumar45@gmail.com';
 
   const toggleChat = async () => {
     setIsChatOpen(!isChatOpen);
@@ -798,6 +799,17 @@ const Profile = () => {
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">{fullDisplayUser?.name || fullDisplayUser?.username || "Loading..."}</h1>
                 <p className="text-sm text-gray-500 mt-1 font-medium">@{displayedUsername}</p>
                 <p className="text-base sm:text-lg text-gray-700 font-medium mt-2 leading-relaxed">{fullDisplayUser?.bio || "Software Developer & Tech Enthusiast"}</p>
+                {showDevConnectFounderBadge && (
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 px-3 py-2 shadow-sm">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                      <Award className="w-4 h-4" />
+                    </span>
+                    <div className="text-left leading-tight">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-700">Founder Highlight</p>
+                      <p className="text-sm font-semibold text-amber-900">Original builder of DevConnect</p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3">
                   <span className="text-sm text-primary font-semibold hover:underline cursor-pointer">Contact info</span>
                   <div className="flex items-center gap-1 text-sm text-primary font-semibold hover:underline cursor-pointer">
