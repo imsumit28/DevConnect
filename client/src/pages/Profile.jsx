@@ -10,6 +10,7 @@ import { useToast } from '../context/ToastContext';
 import { io } from 'socket.io-client';
 import { socketUrl } from '../utils/runtimeConfig';
 import { resolveMediaUrl } from '../utils/mediaUrl';
+import { compressImageFile } from '../utils/imageCompression';
 
 const Profile = () => {
   const { user: currentUser, updateUser } = useContext(AuthContext); 
@@ -373,8 +374,14 @@ const Profile = () => {
   const uploadImageForTarget = async (file, target) => {
     setUploading(true);
     try {
+      const compressedImage = await compressImageFile(file, {
+        maxWidth: target === 'cover' ? 1500 : 900,
+        maxHeight: target === 'cover' ? 900 : 900,
+        quality: 0.84,
+      });
+
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', compressedImage);
       
       const uploadRes = await api.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -472,7 +479,7 @@ const Profile = () => {
     }
 
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.92);
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.88);
     });
   };
 

@@ -3,6 +3,7 @@ import { Image, Video, Calendar, FileText, X, Clock, MapPin, ExternalLink } from
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../services/api';
+import { compressImageFile } from '../utils/imageCompression';
 
 const DEV_EVENTS = [
   { id: 1, title: 'React Summit 2026', date: '2026-06-15', location: 'Amsterdam', desc: 'The biggest React conference in the world' },
@@ -55,8 +56,13 @@ const PostInput = ({ onPostCreated }) => {
       let videoUrl = '';
 
       if (image) {
+        const compressedImage = await compressImageFile(image, {
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 0.82,
+        });
         const formData = new FormData();
-        formData.append('image', image);
+        formData.append('image', compressedImage);
         const uploadRes = await api.post('/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
