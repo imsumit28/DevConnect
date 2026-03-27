@@ -38,11 +38,9 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const displayCommentsList = isRepost && Array.isArray(originalPost?.comments) ? originalPost.comments : commentsList;
   const isOwnRepostCard = Boolean(isRepost) && String(user?.username || '') === String(currentUser?.username || '');
   const founderEmail = 'ersumitkumar45@gmail.com';
-  const founderUsernames = new Set(['sumitkr', 'ersumitkumar45']);
   const isFounderAccount = (person) => {
     const email = String(person?.email || '').toLowerCase().trim();
-    const uname = String(person?.username || '').toLowerCase().trim();
-    return email === founderEmail || founderUsernames.has(uname);
+    return email === founderEmail;
   };
 
   const [isLiked, setIsLiked] = useState(displayLikesList?.includes(currentUser?._id) || false);

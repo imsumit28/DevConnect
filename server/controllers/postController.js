@@ -4,16 +4,16 @@ const Notification = require('../models/Notification');
 
 const withCommentUsers = (query) =>
   query
-    .populate('comments.userId', 'username name profilePic')
-    .populate('comments.replies.userId', 'username name profilePic');
+    .populate('comments.userId', 'username name profilePic email')
+    .populate('comments.replies.userId', 'username name profilePic email');
 
 const withFullPostDataById = (id) =>
   withCommentUsers(
     Post.findById(id)
-      .populate('userId', 'username name profilePic')
+      .populate('userId', 'username name profilePic email')
       .populate({
         path: 'originalPost',
-        populate: { path: 'userId', select: 'username name profilePic' }
+        populate: { path: 'userId', select: 'username name profilePic email' }
       })
   );
 
@@ -30,10 +30,10 @@ exports.getPostsByUserId = async (req, res) => {
 
     const posts = await withCommentUsers(
       Post.find(query)
-      .populate('userId', 'username name profilePic')
+      .populate('userId', 'username name profilePic email')
       .populate({
         path: 'originalPost',
-        populate: { path: 'userId', select: 'username name profilePic' }
+        populate: { path: 'userId', select: 'username name profilePic email' }
       })
       .sort({ createdAt: -1 })
     );
@@ -62,7 +62,7 @@ exports.createPost = async (req, res) => {
     const savedPost = await newPost.save();
     
     const populatedPost = await Post.findById(savedPost._id)
-       .populate('userId', 'username name profilePic');
+       .populate('userId', 'username name profilePic email');
 
     req.app.get('io').emit('postCreated', populatedPost);
 
@@ -80,10 +80,10 @@ exports.getPosts = async (req, res) => {
   try {
     const posts = await withCommentUsers(
       Post.find({ isActivity: { $ne: true } })
-      .populate('userId', 'username name profilePic')
+      .populate('userId', 'username name profilePic email')
       .populate({
         path: 'originalPost',
-        populate: { path: 'userId', select: 'username name profilePic' }
+        populate: { path: 'userId', select: 'username name profilePic email' }
       })
       .sort({ createdAt: -1 })
     );
@@ -360,10 +360,10 @@ exports.repostPost = async (req, res) => {
 
     // Populate for response and socket broadcast
     const populatedPost = await Post.findById(newPost._id)
-      .populate('userId', 'username name profilePic')
+      .populate('userId', 'username name profilePic email')
       .populate({
         path: 'originalPost',
-        populate: { path: 'userId', select: 'username name profilePic' }
+        populate: { path: 'userId', select: 'username name profilePic email' }
       });
 
     // Notify the original author if not self-reposting
@@ -410,7 +410,7 @@ exports.logActivity = async (req, res) => {
     });
     
     const populatedActivity = await Post.findById(newActivity._id)
-      .populate('userId', 'username name profilePic');
+      .populate('userId', 'username name profilePic email');
 
     req.app.get('io').emit('postCreated', populatedActivity);
 
@@ -444,9 +444,9 @@ exports.togglePinPost = async (req, res) => {
       user.pinnedPost = req.params.id;
       await user.save();
       const pinned = await Post.findById(req.params.id)
-        .populate('userId', 'username name profilePic')
-        .populate('comments.userId', 'username name profilePic')
-        .populate('comments.replies.userId', 'username name profilePic');
+        .populate('userId', 'username name profilePic email')
+        .populate('comments.userId', 'username name profilePic email')
+        .populate('comments.replies.userId', 'username name profilePic email');
       return res.json({ message: 'Post pinned', pinnedPost: pinned });
     }
   } catch (error) {
@@ -463,9 +463,9 @@ exports.getPinnedPost = async (req, res) => {
     if (!user || !user.pinnedPost) return res.json(null);
 
     const post = await Post.findById(user.pinnedPost)
-      .populate('userId', 'username name profilePic')
-      .populate('comments.userId', 'username name profilePic')
-      .populate('comments.replies.userId', 'username name profilePic');
+      .populate('userId', 'username name profilePic email')
+      .populate('comments.userId', 'username name profilePic email')
+      .populate('comments.replies.userId', 'username name profilePic email');
     res.json(post);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

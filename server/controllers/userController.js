@@ -41,8 +41,8 @@ exports.getUserProfile = async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
       .select('-password')
-      .populate('followers', 'username name profilePic')
-      .populate('following', 'username name profilePic');
+      .populate('followers', 'username name profilePic email')
+      .populate('following', 'username name profilePic email');
 
     if (user) {
       res.json(user);
@@ -85,8 +85,8 @@ exports.getMyProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user)
       .select('-password')
-      .populate('followers', 'username name profilePic')
-      .populate('following', 'username name profilePic');
+      .populate('followers', 'username name profilePic email')
+      .populate('following', 'username name profilePic email');
 
     if (user) {
       res.json(user);
@@ -149,13 +149,13 @@ exports.getUserActivity = async (req, res) => {
     let posts;
     if (type === 'likes') {
       posts = await Post.find({ likes: userId, isActivity: { $ne: true } })
-        .populate('userId', 'username name profilePic')
-        .populate('comments.userId', 'username name profilePic')
+        .populate('userId', 'username name profilePic email')
+        .populate('comments.userId', 'username name profilePic email')
         .sort({ createdAt: -1 });
     } else if (type === 'comments') {
       posts = await Post.find({ 'comments.userId': userId, isActivity: { $ne: true } })
-        .populate('userId', 'username name profilePic')
-        .populate('comments.userId', 'username name profilePic')
+        .populate('userId', 'username name profilePic email')
+        .populate('comments.userId', 'username name profilePic email')
         .sort({ createdAt: -1 });
     } else {
       posts = [];
@@ -261,7 +261,7 @@ exports.searchUsers = async (req, res) => {
         }
       : {};
 
-    const users = await User.find({ ...keyword }).select('username name profilePic bio');
+    const users = await User.find({ ...keyword }).select('username name profilePic email bio');
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
