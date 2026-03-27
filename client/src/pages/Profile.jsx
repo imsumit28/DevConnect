@@ -1353,9 +1353,9 @@ const Profile = () => {
       )}
 
       {isCropModalOpen && (
-        <div className="fixed inset-0 z-[240] bg-slate-900/75 backdrop-blur-md flex items-center justify-center p-4" onClick={closeCropModal}>
-          <div className="w-full max-w-3xl bg-white rounded-3xl border border-blue-100 shadow-[0_24px_60px_rgba(13,42,83,0.35)] overflow-hidden animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b border-blue-100/70 bg-gradient-to-r from-blue-50 to-cyan-50 flex items-center justify-between">
+        <div className="fixed inset-0 z-[240] bg-slate-900/75 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto overflow-x-hidden" onClick={closeCropModal}>
+          <div className="w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl border border-blue-100 shadow-[0_24px_60px_rgba(13,42,83,0.35)] overflow-y-auto overflow-x-hidden max-h-[96vh] sm:max-h-[92vh] animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-blue-100/70 bg-gradient-to-r from-blue-50 to-cyan-50 flex items-center justify-between">
               <div className="flex items-start gap-3">
                 <span className="h-9 w-9 rounded-xl bg-white border border-blue-100 text-primary inline-flex items-center justify-center shadow-sm">
                   <Crop className="w-4 h-4" />
@@ -1376,15 +1376,15 @@ const Profile = () => {
               </button>
             </div>
 
-            <div className="p-5">
-              <div className="bg-gradient-to-b from-slate-100 to-slate-200/70 rounded-2xl p-4 border border-slate-300">
+            <div className="p-3 sm:p-5">
+              <div className="bg-gradient-to-b from-slate-100 to-slate-200/70 rounded-2xl p-2.5 sm:p-4 border border-slate-300">
                 <div
                   onPointerDown={handleCropPointerDown}
                   onPointerMove={handleCropPointerMove}
                   onPointerUp={handleCropPointerUp}
                   onPointerLeave={handleCropPointerUp}
                   onPointerCancel={handleCropPointerUp}
-                  className={`relative mx-auto overflow-hidden bg-gray-200 border border-slate-400/70 select-none touch-none shadow-inner ${isCropDragging ? 'cursor-grabbing' : 'cursor-grab'} ${cropTarget === 'cover' ? 'w-full max-w-[680px] aspect-[3/1] rounded-2xl' : 'w-72 h-72 rounded-full'}`}
+                  className={`relative mx-auto overflow-hidden bg-gray-200 border border-slate-400/70 select-none touch-none shadow-inner ${isCropDragging ? 'cursor-grabbing' : 'cursor-grab'} ${cropTarget === 'cover' ? 'w-full max-w-[680px] aspect-[3/1] rounded-2xl' : 'w-[min(72vw,18rem)] h-[min(72vw,18rem)] rounded-full'}`}
                 >
                   {cropImageSrc && (
                     <img
@@ -1471,28 +1471,28 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="px-5 pb-5 pt-1 flex items-center justify-between gap-3">
+            <div className="px-3 sm:px-5 pb-4 sm:pb-5 pt-1 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={handleCropReset}
                 disabled={isCropping || uploading}
-                className="border border-gray-300 text-gray-600 px-4 py-2 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60 inline-flex items-center gap-1.5"
+                className="border border-gray-300 text-gray-600 px-4 py-2 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
               >
                 <RotateCcw className="w-4 h-4" />
                 Reset
               </button>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={closeCropModal}
                 disabled={isCropping}
-                className="border border-gray-300 text-gray-700 px-4 py-2 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+                className="border border-gray-300 text-gray-700 px-4 py-2 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60 flex-1 sm:flex-none"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCropSave}
                 disabled={isCropping || uploading}
-                className="bg-primary text-white px-5 py-2 rounded-full font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 inline-flex items-center gap-2"
+                className="bg-primary text-white px-5 py-2 rounded-full font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2 flex-1 sm:flex-none"
               >
                 {(isCropping || uploading) && <span className="h-4 w-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin" />}
                 Save crop
