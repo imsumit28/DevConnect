@@ -9,6 +9,7 @@ import NotificationBell from './NotificationBell';
 import { io } from 'socket.io-client';
 import { useToast } from '../context/ToastContext';
 import { socketUrl } from '../utils/runtimeConfig';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -152,7 +153,7 @@ const Navbar = () => {
                 className="relative group cursor-pointer flex flex-col items-center text-gray-500 hover:text-primary transition-colors hover:scale-110 active:scale-95 duration-200"
               >
                 <img 
-                  src={user?.profilePic || `https://i.pravatar.cc/150?u=${user?.username || 'me'}`} 
+                  src={resolveMediaUrl(user?.profilePic) || `https://i.pravatar.cc/150?u=${user?.username || 'me'}`} 
                   alt="Me" 
                   className="w-6 h-6 rounded-full object-cover border border-white shadow-sm transition-all" 
                 />
@@ -191,7 +192,7 @@ const Navbar = () => {
                       handleSelectUser(result.username);
                     }}
                   >
-                    <img src={result.profilePic || `https://i.pravatar.cc/150?u=${result.username}`} alt="avatar" className="w-8 h-8 rounded-full object-cover border border-gray-100 shadow-sm" />
+                    <img src={resolveMediaUrl(result.profilePic) || `https://i.pravatar.cc/150?u=${result.username}`} alt="avatar" className="w-8 h-8 rounded-full object-cover border border-gray-100 shadow-sm" />
                     <div>
                       <p className="text-sm font-semibold text-gray-800">{result.name || result.username}</p>
                       <p className="text-xs text-gray-500 truncate font-medium">@{result.username}</p>

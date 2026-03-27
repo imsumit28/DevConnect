@@ -9,6 +9,7 @@ import ShareModal from './ShareModal';
 import SendModal from './SendModal';
 import { useToast } from '../context/ToastContext';
 import { formatRelativeTime } from '../utils/timeUtils';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 
 const PostCard = ({ postId, user, time, content, image, video, likesList = [], commentsList = [], isActivity = false, activityType = 'none', postType = 'post', articleTitle, eventTitle, eventDate, isPinnedDisplay = false, onPin, isRepost = false, originalPost = null, alreadyReposted = false, onRepostStateChange = null }) => {
   const { user: currentUser } = useContext(AuthContext);
@@ -306,8 +307,8 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
 
   const displayUser = isRepost && originalPost ? originalPost.userId : user;
   const displayContent = isRepost && originalPost ? originalPost.content : content;
-  const displayImage = isRepost && originalPost ? originalPost.image : image;
-  const displayVideo = isRepost && originalPost ? originalPost.video : video;
+  const displayImage = resolveMediaUrl(isRepost && originalPost ? originalPost.image : image);
+  const displayVideo = resolveMediaUrl(isRepost && originalPost ? originalPost.video : video);
   const displayPostType = isRepost && originalPost ? originalPost.postType : postType;
   const displayArticleTitle = isRepost && originalPost ? originalPost.articleTitle : articleTitle;
   const displayEventTitle = isRepost && originalPost ? originalPost.eventTitle : eventTitle;
@@ -339,7 +340,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
       <div className="p-4 flex gap-3 items-start">
         <Link to={`/profile/${displayUser?.username}`} className="flex-shrink-0">
           <img
-            src={displayUser?.profilePic || `https://i.pravatar.cc/150?u=${displayUser?.username || 'developer'}`}
+            src={resolveMediaUrl(displayUser?.profilePic) || `https://i.pravatar.cc/150?u=${displayUser?.username || 'developer'}`}
             alt={displayUser?.name}
             className="w-12 h-12 rounded-full object-cover cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-md border border-gray-100"
             onError={(e) => { e.target.src = `https://i.pravatar.cc/150?u=${displayUser?.username || 'dev'}`; }}
@@ -518,7 +519,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
       {showComments && (
         <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-2 duration-300">
           <form onSubmit={handleComment} className="flex gap-2 mb-4">
-            <img src={currentUser?.profilePic || 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg'} alt="Me" className="w-8 h-8 rounded-full object-cover" />
+            <img src={resolveMediaUrl(currentUser?.profilePic) || 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg'} alt="Me" className="w-8 h-8 rounded-full object-cover" />
             <div className="flex-1">
               <textarea
                 ref={commentTextareaRef}
@@ -584,7 +585,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
               return (
                 <div key={commentId} className="flex gap-2">
                   <Link to={`/profile/${commentUsername}`}>
-                    <img src={c.userId?.profilePic || 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg'} alt={commentName} className="w-7 h-7 rounded-full object-cover mt-1 hover:scale-105 transition-transform" />
+                    <img src={resolveMediaUrl(c.userId?.profilePic) || 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg'} alt={commentName} className="w-7 h-7 rounded-full object-cover mt-1 hover:scale-105 transition-transform" />
                   </Link>
                   <div className="flex-1">
                     <div className="bg-gray-50 px-3 py-2 rounded-xl rounded-tl-none flex-1 border border-gray-100">

@@ -5,6 +5,7 @@ import api from '../services/api';
 import { io } from 'socket.io-client';
 import { BadgeCheck, Users, Link2, Eye, MessageCircle, Sparkles } from 'lucide-react';
 import { socketUrl } from '../utils/runtimeConfig';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 
 const Sidebar = () => {
   const { user } = useContext(AuthContext);
@@ -44,6 +45,8 @@ const Sidebar = () => {
     : 'Full Stack Developer • MERN • System Design';
   const valueStatement = displayUser?.bio || 'Building scalable web apps & real-time systems';
   const showOwnerHighlight = String(displayUser?.email || '').toLowerCase() === 'ersumitkumar45@gmail.com';
+  const resolvedCoverPic = resolveMediaUrl(displayUser?.coverPic || '');
+  const resolvedProfilePic = resolveMediaUrl(displayUser?.profilePic || '');
 
   return (
     <div className="relative w-full rounded-3xl border border-blue-100/80 overflow-hidden shadow-[0_18px_40px_rgba(7,49,101,0.14)] bg-white/90 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_26px_50px_rgba(7,49,101,0.18)] mb-6">
@@ -51,9 +54,9 @@ const Sidebar = () => {
       <div className="pointer-events-none absolute -left-10 bottom-12 w-40 h-40 rounded-full bg-teal-200/25 blur-3xl" />
 
       <div className="relative h-24 sm:h-28 w-full bg-gradient-to-r from-slate-100 to-blue-100">
-        {displayUser?.coverPic ? (
+        {resolvedCoverPic ? (
           <img
-            src={displayUser.coverPic}
+            src={resolvedCoverPic}
             alt="Cover"
             className="w-full h-full object-contain bg-gradient-to-r from-slate-100 to-blue-100"
           />
@@ -66,7 +69,7 @@ const Sidebar = () => {
       <div className="relative px-4 sm:px-5 pb-5 sm:pb-6 -mt-11">
         <div className="relative w-max mx-auto">
           <img
-            src={displayUser?.profilePic || `https://i.pravatar.cc/150?u=${displayUser?.username || 'guest'}`}
+            src={resolvedProfilePic || `https://i.pravatar.cc/150?u=${displayUser?.username || 'guest'}`}
             alt="Profile"
             className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white bg-white object-cover shadow-[0_10px_25px_rgba(8,65,126,0.28)] ring-2 ring-blue-100 transition-transform duration-300 hover:scale-105"
           />

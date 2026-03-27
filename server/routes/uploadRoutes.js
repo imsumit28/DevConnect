@@ -9,8 +9,10 @@ const { protect } = require('../middleware/auth');
 router.post('/', protect, upload.single('image'), (req, res) => {
   try {
     if (req.file) {
-      // Return absolute URL for local storage uploads.
-      const baseUrl = process.env.SERVER_URL || `${req.protocol}://${req.get('host')}`;
+      // Build URL from request host so production uploads always point to the live backend domain.
+      const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.get('host');
+      const baseUrl = `${proto}://${host}`;
       res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
     } else {
       res.status(400).json({ message: 'No image uploaded' });

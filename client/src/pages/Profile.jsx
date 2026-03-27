@@ -9,6 +9,7 @@ import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { io } from 'socket.io-client';
 import { socketUrl } from '../utils/runtimeConfig';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 
 const Profile = () => {
   const { user: currentUser, updateUser } = useContext(AuthContext); 
@@ -232,6 +233,8 @@ const Profile = () => {
   // Use profileUser for display (always populated with fresh data)
   const fullDisplayUser = profileUser || displayUser;
   const fullDisplayUserId = fullDisplayUser?._id ? String(fullDisplayUser._id) : '';
+  const resolvedCoverPic = resolveMediaUrl(fullDisplayUser?.coverPic || '');
+  const resolvedProfilePic = resolveMediaUrl(fullDisplayUser?.profilePic || '');
 
   // If user reposts their own post, keep a single card in Profile:
   // hide the repost duplicate and mark the original post as reposted.
@@ -543,8 +546,8 @@ const Profile = () => {
     const profileFallback = `https://i.pravatar.cc/150?u=${displayedUsername || 'developer'}`;
     const selectedUrl =
       type === 'cover'
-        ? fullDisplayUser?.coverPic || ''
-        : fullDisplayUser?.profilePic || profileFallback;
+        ? resolvedCoverPic || ''
+        : resolvedProfilePic || profileFallback;
 
     if (!selectedUrl) {
       showToast('No image available to preview', 'error');
@@ -706,8 +709,8 @@ const Profile = () => {
   };
 
   // Get the cover image style
-  const coverStyle = fullDisplayUser?.coverPic 
-    ? { backgroundImage: `url(${fullDisplayUser.coverPic})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  const coverStyle = resolvedCoverPic
+    ? { backgroundImage: `url(${resolvedCoverPic})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : { backgroundImage: 'linear-gradient(to right, #0A66C2, #4db8ff)' };
 
   return (
@@ -769,7 +772,7 @@ const Profile = () => {
               title="Profile photo options"
             >
               <img 
-                src={fullDisplayUser?.profilePic || `https://i.pravatar.cc/150?u=${displayedUsername}`} 
+                src={resolvedProfilePic || `https://i.pravatar.cc/150?u=${displayedUsername}`} 
                 alt="Profile" 
                 className={`w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full border-4 border-white object-cover bg-white hover:scale-105 transition-transform duration-300 shadow-lg ${uploading ? 'opacity-50' : ''}`}
               />
