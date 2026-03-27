@@ -25,6 +25,7 @@ DevConnect is a modern developer social network inspired by LinkedIn, built for 
 - Search users by username
 - Trending topic filters for feed exploration
 - Responsive, modern UI with polished micro-interactions
+- Used Cloudinary for image storage
 
 ## Screenshots
 
