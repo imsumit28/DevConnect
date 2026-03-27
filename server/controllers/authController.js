@@ -240,7 +240,13 @@ exports.googleAuthCallback = async (req, res) => {
     });
 
     if (!tokenResponse.ok) {
-      return res.redirect(`${getClientBaseUrl()}/${mode}?oauthError=token_exchange_failed`);
+      const tokenErrorBody = await tokenResponse.text();
+      console.error('Google token exchange failed', {
+        status: tokenResponse.status,
+        redirectUri,
+        body: tokenErrorBody,
+      });
+      return res.redirect(`${getClientBaseUrl()}/${mode}?oauthError=token_exchange_failed&oauthStatus=${tokenResponse.status}`);
     }
 
     const tokenData = await tokenResponse.json();
@@ -254,7 +260,12 @@ exports.googleAuthCallback = async (req, res) => {
     });
 
     if (!profileResponse.ok) {
-      return res.redirect(`${getClientBaseUrl()}/${mode}?oauthError=profile_fetch_failed`);
+      const profileErrorBody = await profileResponse.text();
+      console.error('Google profile fetch failed', {
+        status: profileResponse.status,
+        body: profileErrorBody,
+      });
+      return res.redirect(`${getClientBaseUrl()}/${mode}?oauthError=profile_fetch_failed&oauthStatus=${profileResponse.status}`);
     }
 
     const profile = await profileResponse.json();
@@ -298,6 +309,7 @@ exports.googleAuthCallback = async (req, res) => {
     return res.redirect(`${getClientBaseUrl()}/auth/callback?${redirectParams.toString()}`);
   } catch (error) {
     const mode = req.query.state === 'register' ? 'register' : 'login';
+    console.error('Google OAuth callback error', error);
     return res.redirect(`${getClientBaseUrl()}/${mode}?oauthError=server_error`);
   }
 };
