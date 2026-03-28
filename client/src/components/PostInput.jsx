@@ -5,6 +5,9 @@ import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 import { compressImageFile } from '../utils/imageCompression';
 
+const MAX_VIDEO_SIZE_BYTES = 5 * 1024 * 1024;
+const VIDEO_SIZE_ERROR = 'video till 5mb is allowed or compress video to 5 mb';
+
 const DEV_EVENTS = [
   { id: 1, title: 'React Summit 2026', date: '2026-06-15', location: 'Amsterdam', desc: 'The biggest React conference in the world' },
   { id: 2, title: 'NodeConf EU', date: '2026-07-10', location: 'Kilkenny, Ireland', desc: 'Europe\'s premier Node.js conference' },
@@ -70,6 +73,12 @@ const PostInput = ({ onPostCreated }) => {
       }
 
       if (video) {
+        if (video.size > MAX_VIDEO_SIZE_BYTES) {
+          showToast(VIDEO_SIZE_ERROR, 'error');
+          setLoading(false);
+          return;
+        }
+
         const formData = new FormData();
         formData.append('image', video);
         const uploadRes = await api.post('/upload', formData, {
@@ -85,7 +94,7 @@ const PostInput = ({ onPostCreated }) => {
       if (onPostCreated) onPostCreated(res.data);
     } catch (error) {
       console.error('Failed to create post', error);
-      showToast('Failed to create post', 'error');
+      showToast(error.response?.data?.message || 'Failed to create post', 'error');
     } finally {
       setLoading(false);
     }
@@ -100,6 +109,12 @@ const PostInput = ({ onPostCreated }) => {
     if (!file) return;
     if (!file.type.startsWith('video/')) {
       showToast('Please select a video file', 'error');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_VIDEO_SIZE_BYTES) {
+      showToast(VIDEO_SIZE_ERROR, 'error');
+      e.target.value = '';
       return;
     }
     setVideo(file);
@@ -194,7 +209,15 @@ const PostInput = ({ onPostCreated }) => {
         {video && (
           <div className="mt-3 relative inline-block">
             <video src={URL.createObjectURL(video)} className="h-32 rounded-lg" controls />
-            <button onClick={() => setVideo(null)} className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1 text-xs hover:bg-gray-700">✕</button>
+            <button
+              onClick={() => {
+                setVideo(null);
+                if (videoInputRef.current) videoInputRef.current.value = '';
+              }}
+              className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1 text-xs hover:bg-gray-700"
+            >
+              ✕
+            </button>
           </div>
         )}
         
