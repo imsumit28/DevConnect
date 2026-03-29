@@ -1377,8 +1377,7 @@ const Profile = () => {
               </button>
             </div>
           </div>
-          </div>
-        </>
+        </div>
       )}
 
       {isProjectModalOpen && (
@@ -1670,65 +1669,65 @@ const Profile = () => {
           />
           <div
             className="fixed inset-x-0 bottom-0 md:inset-x-auto md:bottom-4 md:right-4 w-full md:w-80 bg-white shadow-2xl rounded-t-3xl md:rounded-2xl border border-gray-200 z-[150] flex flex-col overflow-hidden h-[75vh] md:h-96"
-            style={{ animation: 'slideUpChat 0.3s cubic-bezier(0.32,0.72,0,1)' }}
+            style={{ animation: "slideUpChat 0.3s cubic-bezier(0.32,0.72,0,1)" }}
           >
-          <div className="flex items-center justify-center py-2 md:hidden bg-white">
-            <div className="w-10 h-1 rounded-full bg-gray-300" />
-          </div>
-          <div className="bg-primary p-3 flex justify-between items-center text-white">
-            <div className="flex items-center gap-2">
-              <img src={fullDisplayUser?.profilePic || "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg"} className="w-6 h-6 rounded-full" />
-              <span className="text-sm font-bold">{fullDisplayUser?.username}</span>
+            <div className="flex items-center justify-center py-2 md:hidden bg-white">
+              <div className="w-10 h-1 rounded-full bg-gray-300" />
             </div>
-            <button onClick={() => setIsChatOpen(false)} className="hover:bg-blue-700 rounded p-1">✕</button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 scroll-smooth bg-gray-50/50">
-            {messages.map((msg, idx) => (
-              <div 
-                key={idx} 
-                className={`flex flex-col ${getEntityId(msg.senderId) === currentUser?._id ? 'items-end' : 'items-start'}`}
-              >
-                <div className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
-                  getEntityId(msg.senderId) === currentUser?._id 
-                    ? 'bg-primary text-white rounded-tr-none' 
-                    : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
-                }`}>
-                  {msg.messageType === 'post' ? (
-                    <div className="flex flex-col gap-2 p-1 min-w-[120px]">
-                      <p className="italic opacity-80 text-[10px] mb-1">Shared a post</p>
-                      <div className="bg-white/10 rounded-lg p-2 border border-white/20">
-                         <p className="text-xs line-clamp-2">{msg.text}</p>
-                         <Link to={`/post/${msg.postId}`} className="mt-2 text-[10px] font-bold underline block">View Post →</Link>
-                      </div>
-                    </div>
-                  ) : msg.text}
-                </div>
-                <span className="text-[8px] text-gray-400 mt-1 flex items-center gap-0.5">
-                  <Clock className="w-2 h-2" />
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+            <div className="bg-primary p-3 flex justify-between items-center text-white">
+              <div className="flex items-center gap-2">
+                <img src={fullDisplayUser?.profilePic || "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg"} className="w-6 h-6 rounded-full" />
+                <span className="text-sm font-bold">{fullDisplayUser?.username}</span>
               </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-          
-          <form onSubmit={handleSendMessage} className="p-3 border-t flex gap-2 bg-white">
-            <input 
-              type="text" 
-              placeholder="Type a message..." 
-              className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-primary transition-all"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-            />
-            <button 
-              type="submit" 
-              disabled={!newMessage.trim()}
-              className="text-primary hover:bg-blue-50 p-2 rounded-full transition-colors disabled:opacity-50"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </form>
+              <button onClick={() => setIsChatOpen(false)} className="hover:bg-blue-700 rounded p-1">✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 scroll-smooth bg-gray-50/50">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex flex-col ${getEntityId(msg.senderId) === currentUser?._id ? 'items-end' : 'items-start'}`}
+                >
+                  <div className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
+                    getEntityId(msg.senderId) === currentUser?._id
+                      ? 'bg-primary text-white rounded-tr-none'
+                      : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
+                  }`}>
+                    {msg.messageType === 'post' ? (
+                      <div className="flex flex-col gap-2 p-1 min-w-[120px]">
+                        <p className="italic opacity-80 text-[10px] mb-1">Shared a post</p>
+                        <div className="bg-white/10 rounded-lg p-2 border border-white/20">
+                           <p className="text-xs line-clamp-2">{msg.text}</p>
+                           <Link to={`/post/${msg.postId}`} className="mt-2 text-[10px] font-bold underline block">View Post →</Link>
+                        </div>
+                      </div>
+                    ) : msg.text}
+                  </div>
+                  <span className="text-[8px] text-gray-400 mt-1 flex items-center gap-0.5">
+                    <Clock className="w-2 h-2" />
+                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form onSubmit={handleSendMessage} className="p-3 border-t flex gap-2 bg-white">
+              <input
+                type="text"
+                placeholder="Type a message..."
+                className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-primary transition-all"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={!newMessage.trim()}
+                className="text-primary hover:bg-blue-50 p-2 rounded-full transition-colors disabled:opacity-50"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </form>
           </div>
         </>
       )}
