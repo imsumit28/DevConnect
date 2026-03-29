@@ -1377,7 +1377,8 @@ const Profile = () => {
               </button>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {isProjectModalOpen && (
@@ -1661,7 +1662,19 @@ const Profile = () => {
 
       {/* Advanced Chat Modal */}
       {isChatOpen && (
-        <div className="fixed bottom-2 right-2 left-2 md:left-auto md:bottom-4 md:right-4 w-auto md:w-80 bg-white shadow-2xl rounded-t-2xl border border-gray-200 z-[150] flex flex-col overflow-hidden animate-slide-up h-[70vh] md:h-96">
+        <>
+          {/* Mobile backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/40 z-[148] md:hidden"
+            onClick={() => setIsChatOpen(false)}
+          />
+          <div
+            className="fixed inset-x-0 bottom-0 md:inset-x-auto md:bottom-4 md:right-4 w-full md:w-80 bg-white shadow-2xl rounded-t-3xl md:rounded-2xl border border-gray-200 z-[150] flex flex-col overflow-hidden h-[75vh] md:h-96"
+            style={{ animation: 'slideUpChat 0.3s cubic-bezier(0.32,0.72,0,1)' }}
+          >
+          <div className="flex items-center justify-center py-2 md:hidden bg-white">
+            <div className="w-10 h-1 rounded-full bg-gray-300" />
+          </div>
           <div className="bg-primary p-3 flex justify-between items-center text-white">
             <div className="flex items-center gap-2">
               <img src={fullDisplayUser?.profilePic || "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg"} className="w-6 h-6 rounded-full" />
@@ -1716,7 +1729,8 @@ const Profile = () => {
               <Send className="w-5 h-5" />
             </button>
           </form>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
