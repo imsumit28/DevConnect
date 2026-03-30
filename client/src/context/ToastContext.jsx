@@ -18,11 +18,11 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2">
+      <div className="fixed bottom-4 left-0 right-0 z-[200] flex flex-col items-center gap-2 pointer-events-none">
         {toasts.map((toast) => (
           <div 
             key={toast.id} 
-            className={`px-6 py-3 rounded-full shadow-lg text-white text-sm font-semibold animate-slide-up ${
+            className={`px-6 py-3 rounded-full shadow-lg text-white text-sm font-semibold animate-toast pointer-events-auto text-center whitespace-nowrap ${
               toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
             }`}
           >
