@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 import NotificationItem from './NotificationItem';
 
 const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkOneAsRead, onClose }) => {
@@ -7,14 +8,24 @@ const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkOneAsRead, on
       {/* Header */}
       <div className="px-5 py-4 border-b flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10">
         <h3 className="font-bold text-lg text-gray-900">Notifications</h3>
-        {notifications.some(n => !n.isRead) && (
-          <button 
-            onClick={onMarkAsRead}
-            className="text-xs text-primary font-bold hover:text-blue-800 transition-colors py-1 px-2 hover:bg-blue-50 rounded-md"
+        <div className="flex items-center gap-2">
+          {notifications.some(n => !n.isRead) && (
+            <button 
+              onClick={onMarkAsRead}
+              className="text-xs text-primary font-bold hover:text-blue-800 transition-colors py-1 px-2 hover:bg-blue-50 rounded-md"
+            >
+              Mark all as read
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close notifications"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
           >
-            Mark all as read
+            <X className="w-5 h-5" />
           </button>
-        )}
+        </div>
       </div>
       
       {/* List Container */}
