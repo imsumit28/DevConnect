@@ -6,6 +6,8 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { apiOrigin } from '../utils/runtimeConfig';
 
+const HOME_WELCOME_EVENT_KEY = 'dc_home_welcome_event';
+
 const GoogleIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
     <path fill="#4285F4" d="M21.6 12.23c0-.68-.06-1.33-.17-1.96H12v3.7h5.4a4.62 4.62 0 0 1-2 3.04v2.52h3.23c1.89-1.74 2.97-4.3 2.97-7.3Z" />
@@ -93,6 +95,7 @@ const Auth = () => {
     const oauthError = params.get('oauthError');
     const resetSuccess = params.get('reset');
     if (oauthError) {
+      sessionStorage.removeItem(HOME_WELCOME_EVENT_KEY);
       setError('Google sign-in failed. Please try again.');
     } else if (resetSuccess === 'success') {
       setError('');
@@ -110,6 +113,7 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = () => {
+    sessionStorage.setItem(HOME_WELCOME_EVENT_KEY, mode);
     window.location.href = `${apiBase}/api/auth/google?mode=${mode}`;
   };
 
@@ -153,6 +157,7 @@ const Auth = () => {
       } else {
         await register(name, username, email, password);
       }
+      sessionStorage.setItem(HOME_WELCOME_EVENT_KEY, mode);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || `Failed to ${mode}`);

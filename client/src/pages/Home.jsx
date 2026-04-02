@@ -11,6 +11,8 @@ import { FilterX } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { socketUrl } from '../utils/runtimeConfig';
 
+const HOME_WELCOME_EVENT_KEY = 'dc_home_welcome_event';
+
 const Home = () => {
   const { user: currentUser } = useContext(AuthContext);
   const location = useLocation();
@@ -21,7 +23,35 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState('Recent'); // 'Top' or 'Recent'
   const [topOrderIds, setTopOrderIds] = useState([]);
+  const [welcomeVariant, setWelcomeVariant] = useState('');
+  const [isWelcomeClosing, setIsWelcomeClosing] = useState(false);
   const currentUserId = currentUser?._id || currentUser?.id || '';
+
+  const closeWelcome = () => setIsWelcomeClosing(true);
+
+  useEffect(() => {
+    const eventType = sessionStorage.getItem(HOME_WELCOME_EVENT_KEY);
+    if (eventType !== 'login' && eventType !== 'register') return;
+
+    sessionStorage.removeItem(HOME_WELCOME_EVENT_KEY);
+    setWelcomeVariant(eventType);
+    setIsWelcomeClosing(false);
+
+    const hideTimer = setTimeout(() => {
+      setIsWelcomeClosing(true);
+    }, 2500);
+
+    return () => clearTimeout(hideTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!isWelcomeClosing) return;
+    const exitTimer = setTimeout(() => {
+      setWelcomeVariant('');
+      setIsWelcomeClosing(false);
+    }, 220);
+    return () => clearTimeout(exitTimer);
+  }, [isWelcomeClosing]);
 
   useEffect(() => {
     const mergePostUpdate = (existingPost, incomingPost) => {
@@ -216,6 +246,33 @@ const Home = () => {
 
         {/* Center Feed (Spans remaining cols) */}
         <div className="order-1 lg:order-2 col-span-1 lg:col-span-6 flex flex-col gap-4">
+          {welcomeVariant && (
+            <div
+              className={`relative overflow-hidden rounded-2xl border border-white/70 shadow-[0_22px_50px_-30px_rgba(11,107,203,0.55)] px-4 py-3 text-white ${isWelcomeClosing ? 'dc-welcome-pop-exit' : 'dc-welcome-pop-enter'}`}
+              style={{ background: 'linear-gradient(125deg, #0b6bcb 0%, #1a8ac7 48%, #15a08f 100%)' }}
+              role="status"
+              aria-live="polite"
+            >
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/20 blur-2xl" />
+              <div className="pointer-events-none absolute -left-6 -bottom-8 h-20 w-20 rounded-full bg-white/15 blur-xl" />
+              <div className="relative flex items-start justify-between gap-4">
+                <p className="text-sm sm:text-base font-semibold leading-snug pr-2">
+                  {welcomeVariant === 'login'
+                    ? 'Welcome back'
+                    : 'Welcome to DevConnect - The Developer Network'}
+                </p>
+                <button
+                  type="button"
+                  onClick={closeWelcome}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 bg-white/15 text-white/95 hover:bg-white/25 transition-colors"
+                  aria-label="Close welcome message"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+
           <PostInput onPostCreated={handlePostCreated} />
 
           {/* Mobile Discover Section */}
