@@ -866,7 +866,7 @@ const Profile = () => {
                 {isOwnProfile ? (
                   <button 
                     onClick={openEditModal}
-                    className="bg-primary text-white font-semibold flex items-center justify-center gap-1 px-5 py-2 rounded-full hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                    className="bg-primary text-white font-semibold flex items-center justify-center gap-1 px-5 py-2 rounded-full hover:bg-blue-700 transition-colors w-full sm:w-auto whitespace-nowrap"
                   >
                     <Edit2 className="w-4 h-4" />
                     Edit Profile
