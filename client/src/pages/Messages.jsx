@@ -25,6 +25,26 @@ const formatTime = (value) => {
   return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+const getDateKey = (value) => {
+  if (!value) return '';
+  const d = new Date(value);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+};
+
+const getDateLabel = (value) => {
+  if (!value) return '';
+  const d = new Date(value);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffMs = today - msgDay;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+};
+
 const Messages = () => {
   const { user } = useContext(AuthContext);
   const currentUserId = user?._id || user?.id || '';
@@ -352,15 +372,30 @@ const Messages = () => {
                   {loadingMessages ? (
                     <p className="text-sm text-gray-500">Loading conversation...</p>
                   ) : messages.length > 0 ? (
-                    messages.map((msg) => {
+                    messages.map((msg, index) => {
                       const isMine = getId(msg.senderId) === currentUserId;
+                      const prevMsg = index > 0 ? messages[index - 1] : null;
+                      const showDateSeparator =
+                        !prevMsg || getDateKey(msg.createdAt) !== getDateKey(prevMsg.createdAt);
+
                       return (
-                        <div key={msg._id} className={`mb-3 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[75%] px-4 py-2 rounded-2xl shadow-sm ${isMine ? 'bg-primary text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm border border-gray-100'}`}>
-                            <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
-                            <p className={`text-[10px] mt-1 ${isMine ? 'text-white/80' : 'text-gray-400'}`}>{formatTime(msg.createdAt)}</p>
+                        <React.Fragment key={msg._id}>
+                          {showDateSeparator && (
+                            <div className="flex items-center justify-center my-4">
+                              <div className="flex-1 h-px bg-gray-200" />
+                              <span className="mx-3 text-[11px] font-semibold text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-200 whitespace-nowrap">
+                                {getDateLabel(msg.createdAt)}
+                              </span>
+                              <div className="flex-1 h-px bg-gray-200" />
+                            </div>
+                          )}
+                          <div className={`mb-3 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[75%] px-4 py-2 rounded-2xl shadow-sm ${isMine ? 'bg-primary text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm border border-gray-100'}`}>
+                              <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
+                              <p className={`text-[10px] mt-1 ${isMine ? 'text-white/80' : 'text-gray-400'}`}>{formatTime(msg.createdAt)}</p>
+                            </div>
                           </div>
-                        </div>
+                        </React.Fragment>
                       );
                     })
                   ) : (
