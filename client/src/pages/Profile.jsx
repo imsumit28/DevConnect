@@ -1044,6 +1044,9 @@ const Profile = () => {
                     articleTitle={pinnedPost.articleTitle}
                     eventTitle={pinnedPost.eventTitle}
                     eventDate={pinnedPost.eventDate}
+                    codeSnippet={pinnedPost.codeSnippet}
+                    codeLanguage={pinnedPost.codeLanguage}
+                    codeTitle={pinnedPost.codeTitle}
                     isPinnedDisplay={true}
                   />
                 </div>
@@ -1082,6 +1085,9 @@ const Profile = () => {
                           articleTitle={post.articleTitle}
                           eventTitle={post.eventTitle}
                           eventDate={post.eventDate}
+                          codeSnippet={post.codeSnippet}
+                          codeLanguage={post.codeLanguage}
+                          codeTitle={post.codeTitle}
                           isRepost={post.isRepost}
                           originalPost={post.originalPost}
                           alreadyReposted={

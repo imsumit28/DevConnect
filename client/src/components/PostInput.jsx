@@ -1,5 +1,5 @@
 import React, { useState, useContext, useRef } from 'react';
-import { Image, Video, Calendar, FileText, X, Clock, MapPin, ExternalLink } from 'lucide-react';
+import { Image, Video, Calendar, FileText, X, Clock, MapPin, ExternalLink, Code2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../services/api';
@@ -7,6 +7,30 @@ import { compressImageFile } from '../utils/imageCompression';
 
 const MAX_VIDEO_SIZE_BYTES = 5 * 1024 * 1024;
 const VIDEO_SIZE_ERROR = 'video till 5mb is allowed or compress video to 5 mb';
+
+const DEV_EVENTS = [
+  { id: 1, title: 'React Summit 2026', date: '2026-06-15', location: 'Amsterdam', desc: 'The biggest React conference in the world' },
+  { id: 2, title: 'NodeConf EU', date: '2026-07-10', location: 'Kilkenny, Ireland', desc: 'Europe\'s premier Node.js conference' },
+  { id: 3, title: 'Google I/O Extended', date: '2026-05-20', location: 'Virtual', desc: 'Developer festival with hands-on workshops' },
+  { id: 4, title: 'AWS re:Invent', date: '2026-11-28', location: 'Las Vegas', desc: 'Cloud computing mega event by Amazon' },
+  { id: 5, title: 'JSConf India', date: '2026-08-12', location: 'Bengaluru', desc: 'JavaScript community conference in India' },
+  { id: 6, title: 'PyCon US 2026', date: '2026-04-23', location: 'Pittsburgh', desc: 'Largest gathering of the Python community' },
+  { id: 7, title: 'DockerCon', date: '2026-09-18', location: 'San Francisco', desc: 'Containerization and DevOps innovation' },
+  { id: 8, title: 'MongoDB World', date: '2026-06-07', location: 'New York', desc: 'The premier event for MongoDB developers' },
+  { id: 9, title: 'GitHub Universe', date: '2026-10-29', location: 'San Francisco', desc: 'The developer event of the year' },
+  { id: 10, title: 'KubeCon Europe', date: '2026-04-01', location: 'Paris', desc: 'Cloud native computing conference' },
+  { id: 11, title: 'VueConf US', date: '2026-05-14', location: 'Tampa', desc: 'Official Vue.js conference in the US' },
+  { id: 12, title: 'RustConf', date: '2026-09-05', location: 'Portland', desc: 'Annual Rust programming language conference' },
+  { id: 13, title: 'GraphQL Summit', date: '2026-10-07', location: 'San Diego', desc: 'World\'s largest GraphQL conference' },
+  { id: 14, title: 'DevOps Days London', date: '2026-03-26', location: 'London', desc: 'Community-run DevOps conference' },
+  { id: 15, title: 'Next.js Conf', date: '2026-10-25', location: 'Virtual', desc: 'Vercel\'s annual Next.js conference' },
+];
+
+const PostInput = ({ onPostCreated }) => {
+  const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
+  const [content, setContent] = useState('');
+  const [image, setImage] = useState(null);
 
 const DEV_EVENTS = [
   { id: 1, title: 'React Summit 2026', date: '2026-06-15', location: 'Amsterdam', desc: 'The biggest React conference in the world' },
@@ -39,6 +63,7 @@ const PostInput = ({ onPostCreated }) => {
   // Modal states
   const [showEventModal, setShowEventModal] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
+  const [showCodeModal, setShowCodeModal] = useState(false);
 
   // Event form
   const [eventTitle, setEventTitle] = useState('');
@@ -48,6 +73,12 @@ const PostInput = ({ onPostCreated }) => {
   // Article form
   const [articleTitle, setArticleTitle] = useState('');
   const [articleContent, setArticleContent] = useState('');
+
+  // Code form
+  const [codeTitle, setCodeTitle] = useState('');
+  const [codeSnippet, setCodeSnippet] = useState('');
+  const [codeLanguage, setCodeLanguage] = useState('javascript');
+  const [codeDescription, setCodeDescription] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -172,6 +203,35 @@ const PostInput = ({ onPostCreated }) => {
     }
   };
 
+  const handleSubmitCode = async () => {
+    if (!codeTitle.trim() || !codeSnippet.trim()) {
+      showToast('Please fill in the title and code snippet', 'error');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.post('/posts', {
+        content: codeDescription || `💻 Code: ${codeTitle}`,
+        postType: 'code',
+        codeTitle,
+        codeSnippet,
+        codeLanguage,
+      });
+      setShowCodeModal(false);
+      setCodeTitle('');
+      setCodeSnippet('');
+      setCodeLanguage('javascript');
+      setCodeDescription('');
+      if (onPostCreated) onPostCreated(res.data);
+      showToast('Code snippet shared!');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to share code snippet', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-4">
@@ -221,7 +281,7 @@ const PostInput = ({ onPostCreated }) => {
           </div>
         )}
         
-        <div className="grid grid-cols-4 gap-1 sm:gap-2 mt-3 pt-2">
+        <div className="grid grid-cols-5 gap-1 sm:gap-2 mt-3 pt-2">
           <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleImageChange} />
           <input type="file" accept="video/*" ref={videoInputRef} className="hidden" onChange={handleVideoChange} />
 
@@ -243,6 +303,14 @@ const PostInput = ({ onPostCreated }) => {
           </button>
           <button 
             type="button"
+            onClick={() => setShowCodeModal(true)}
+            className="flex items-center gap-2 px-2 py-2.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 font-medium text-sm w-full justify-center lg:justify-start lg:w-auto active:scale-95"
+          >
+            <Code2 className="text-[#7c3aed] w-5 h-5" />
+            <span className="hidden sm:inline">Code</span>
+          </button>
+          <button 
+            type="button"
             onClick={() => setShowEventModal(true)}
             className="flex items-center gap-2 px-2 py-2.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 font-medium text-sm w-full justify-center lg:justify-start lg:w-auto active:scale-95"
           >
@@ -255,7 +323,7 @@ const PostInput = ({ onPostCreated }) => {
             className="flex items-center gap-2 px-2 py-2.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 font-medium text-sm w-full justify-center lg:justify-start lg:w-auto active:scale-95"
           >
             <FileText className="text-[#e16745] w-5 h-5" />
-            <span className="hidden sm:inline">Write article</span>
+            <span className="hidden sm:inline">Article</span>
           </button>
         </div>
       </div>
@@ -336,6 +404,66 @@ const PostInput = ({ onPostCreated }) => {
               <button onClick={() => setShowArticleModal(false)} className="border border-gray-400 text-gray-600 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition-colors">Cancel</button>
               <button onClick={handleSubmitArticle} disabled={loading} className="bg-[#e16745] text-white font-semibold px-6 py-2 rounded-full hover:bg-[#c9553a] transition-colors disabled:opacity-50 active:scale-95">
                 {loading ? 'Publishing...' : '📝 Publish Article'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CODE MODAL ── */}
+      {showCodeModal && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowCodeModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Code2 className="w-5 h-5 text-[#7c3aed]" /> Share Code Snippet</h2>
+              <button onClick={() => setShowCodeModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Title</label>
+                <input type="text" value={codeTitle} onChange={(e) => setCodeTitle(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all" placeholder="e.g. Custom React Hook for Debounce" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Language</label>
+                <select value={codeLanguage} onChange={(e) => setCodeLanguage(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all bg-white">
+                  <option value="javascript">JavaScript</option>
+                  <option value="typescript">TypeScript</option>
+                  <option value="python">Python</option>
+                  <option value="java">Java</option>
+                  <option value="cpp">C++</option>
+                  <option value="c">C</option>
+                  <option value="csharp">C#</option>
+                  <option value="go">Go</option>
+                  <option value="rust">Rust</option>
+                  <option value="ruby">Ruby</option>
+                  <option value="php">PHP</option>
+                  <option value="swift">Swift</option>
+                  <option value="kotlin">Kotlin</option>
+                  <option value="html">HTML</option>
+                  <option value="css">CSS</option>
+                  <option value="sql">SQL</option>
+                  <option value="bash">Bash / Shell</option>
+                  <option value="json">JSON</option>
+                  <option value="yaml">YAML</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Code</label>
+                <textarea value={codeSnippet} onChange={(e) => setCodeSnippet(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm font-mono bg-gray-900 text-green-400 focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all resize-none leading-relaxed" rows={10} placeholder="Paste or type your code here..." spellCheck={false} />
+                <p className="text-xs text-gray-400 mt-1 text-right">{codeSnippet.length} characters</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description (optional)</label>
+                <textarea value={codeDescription} onChange={(e) => setCodeDescription(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all resize-none" rows={3} placeholder="Explain what this code does, why you wrote it, or how to use it..." />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+              <button onClick={() => setShowCodeModal(false)} className="border border-gray-400 text-gray-600 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition-colors">Cancel</button>
+              <button onClick={handleSubmitCode} disabled={loading} className="bg-[#7c3aed] text-white font-semibold px-6 py-2 rounded-full hover:bg-[#6d28d9] transition-colors disabled:opacity-50 active:scale-95">
+                {loading ? 'Sharing...' : '💻 Share Code'}
               </button>
             </div>
           </div>

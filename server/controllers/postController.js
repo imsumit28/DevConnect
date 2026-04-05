@@ -57,6 +57,9 @@ exports.createPost = async (req, res) => {
       articleTitle: req.body.articleTitle || '',
       eventTitle: req.body.eventTitle || '',
       eventDate: req.body.eventDate || null,
+      codeSnippet: req.body.codeSnippet || '',
+      codeLanguage: req.body.codeLanguage || '',
+      codeTitle: req.body.codeTitle || '',
     });
 
     const savedPost = await newPost.save();

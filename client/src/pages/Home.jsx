@@ -329,6 +329,9 @@ const Home = () => {
                 articleTitle={post.articleTitle}
                 eventTitle={post.eventTitle}
                 eventDate={post.eventDate}
+                codeSnippet={post.codeSnippet}
+                codeLanguage={post.codeLanguage}
+                codeTitle={post.codeTitle}
                 isRepost={post.isRepost}
                 originalPost={post.originalPost}
                 alreadyReposted={Boolean(post.viewerHasReposted) || repostedOriginalIds.has(String(post._id))}

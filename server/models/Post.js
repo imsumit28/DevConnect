@@ -27,7 +27,7 @@ const postSchema = new mongoose.Schema({
   },
   postType: {
     type: String,
-    enum: ['post', 'article', 'event'],
+    enum: ['post', 'article', 'event', 'code'],
     default: 'post',
   },
   articleTitle: {
@@ -38,6 +38,15 @@ const postSchema = new mongoose.Schema({
   },
   eventDate: {
     type: Date,
+  },
+  codeSnippet: {
+    type: String,
+  },
+  codeLanguage: {
+    type: String,
+  },
+  codeTitle: {
+    type: String,
   },
   isPinned: {
     type: Boolean,

@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { createPortal } from 'react-dom';
 import api from '../services/api';
@@ -11,7 +11,7 @@ import { useToast } from '../context/ToastContext';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { resolveMediaUrl } from '../utils/mediaUrl';
 
-const PostCard = ({ postId, user, time, content, image, video, likesList = [], commentsList = [], isActivity = false, activityType = 'none', postType = 'post', articleTitle, eventTitle, eventDate, isPinnedDisplay = false, onPin, isRepost = false, originalPost = null, alreadyReposted = false, onRepostStateChange = null }) => {
+const PostCard = ({ postId, user, time, content, image, video, likesList = [], commentsList = [], isActivity = false, activityType = 'none', postType = 'post', articleTitle, eventTitle, eventDate, codeSnippet, codeLanguage, codeTitle, isPinnedDisplay = false, onPin, isRepost = false, originalPost = null, alreadyReposted = false, onRepostStateChange = null }) => {
   const { user: currentUser } = useContext(AuthContext);
   const { showToast } = useToast();
   const [showComments, setShowComments] = useState(false);
@@ -318,17 +318,21 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const displayArticleTitle = isRepost && originalPost ? originalPost.articleTitle : articleTitle;
   const displayEventTitle = isRepost && originalPost ? originalPost.eventTitle : eventTitle;
   const displayEventDate = isRepost && originalPost ? originalPost.eventDate : eventDate;
+  const displayCodeSnippet = isRepost && originalPost ? originalPost.codeSnippet : codeSnippet;
+  const displayCodeLanguage = isRepost && originalPost ? originalPost.codeLanguage : codeLanguage;
+  const displayCodeTitle = isRepost && originalPost ? originalPost.codeTitle : codeTitle;
   const isEventCard = displayPostType === 'event';
   const isArticleCard = displayPostType === 'article';
-  const isMediaCard = !isEventCard && !isArticleCard && Boolean(displayImage || displayVideo);
-  const typeLabel = isEventCard ? 'Event' : isArticleCard ? 'Article' : isMediaCard ? 'Media' : '';
+  const isCodeCard = displayPostType === 'code';
+  const isMediaCard = !isEventCard && !isArticleCard && !isCodeCard && Boolean(displayImage || displayVideo);
+  const typeLabel = isEventCard ? 'Event' : isArticleCard ? 'Article' : isCodeCard ? 'Code' : isMediaCard ? 'Media' : '';
   const showPostFounderBadge = isFounderAccount(displayUser);
 
   return (
     <div
       className={`bg-white rounded-2xl shadow-sm border overflow-hidden group hover:shadow-md transition-shadow duration-300 ${
         isPinnedDisplay ? 'border-primary/30 ring-1 ring-primary/10' : 'border-gray-200'
-      } ${isEventCard ? 'ring-1 ring-amber-200/70 bg-gradient-to-b from-amber-50/35 to-white' : ''} ${isArticleCard ? 'ring-1 ring-orange-200/60 bg-gradient-to-b from-orange-50/30 to-white' : ''} ${isMediaCard ? 'ring-1 ring-sky-200/60' : ''} mb-4`}
+      } ${isEventCard ? 'ring-1 ring-amber-200/70 bg-gradient-to-b from-amber-50/35 to-white' : ''} ${isArticleCard ? 'ring-1 ring-orange-200/60 bg-gradient-to-b from-orange-50/30 to-white' : ''} ${isCodeCard ? 'ring-1 ring-violet-200/60 bg-gradient-to-b from-violet-50/30 to-white' : ''} ${isMediaCard ? 'ring-1 ring-sky-200/60' : ''} mb-4`}
     >
       {isRepost && (
         <div className="bg-gray-50 px-4 py-2 flex items-center gap-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
@@ -423,10 +427,12 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                 ? 'bg-amber-50 text-amber-700 border-amber-200'
                 : isArticleCard
                 ? 'bg-orange-50 text-orange-700 border-orange-200'
+                : isCodeCard
+                ? 'bg-violet-50 text-violet-700 border-violet-200'
                 : 'bg-sky-50 text-sky-700 border-sky-200'
             }`}
           >
-            {isArticleCard ? <FileText className="w-3 h-3" /> : <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />}
+            {isArticleCard ? <FileText className="w-3 h-3" /> : isCodeCard ? <Code2 className="w-3 h-3" /> : <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />}
             {typeLabel}
           </span>
         </div>
@@ -438,7 +444,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
         </div>
       )}
 
-      {displayPostType !== 'event' && (
+      {displayPostType !== 'event' && displayPostType !== 'code' && (
         <div className={`px-4 pb-2 ${isArticleCard ? 'pb-4' : ''}`}>
           <p className={`text-gray-800 whitespace-pre-wrap ${isArticleCard ? 'line-clamp-4 text-[16px] leading-7 bg-slate-50 border border-slate-200 rounded-xl p-3.5' : 'text-[15px] leading-7'}`}>
             {displayContent}
@@ -468,6 +474,44 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {displayPostType === 'code' && displayCodeSnippet && (
+        <div className="px-4 m-4 mt-0 rounded-2xl overflow-hidden border border-violet-200/80 shadow-sm">
+          {displayCodeTitle && (
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 flex items-center justify-between">
+              <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                <Code2 className="w-4 h-4" />
+                {displayCodeTitle}
+              </h3>
+              {displayCodeLanguage && (
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/80 bg-white/20 px-2.5 py-1 rounded-full">
+                  {displayCodeLanguage}
+                </span>
+              )}
+            </div>
+          )}
+          <div className="relative group/code">
+            <pre className="bg-gray-900 text-gray-100 px-4 py-4 text-sm font-mono leading-relaxed overflow-x-auto max-h-80 scrollbar-thin">
+              <code>{displayCodeSnippet}</code>
+            </pre>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(displayCodeSnippet);
+                showToast('Code copied to clipboard!');
+              }}
+              className="absolute top-3 right-3 bg-gray-700/80 hover:bg-gray-600 text-gray-300 hover:text-white p-2 rounded-lg transition-all opacity-0 group-hover/code:opacity-100 active:scale-90"
+              title="Copy code"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+          {displayContent && displayContent !== `💻 Code: ${displayCodeTitle}` && (
+            <div className="bg-gray-50 border-t border-gray-200 px-4 py-3">
+              <p className="text-sm text-gray-600 leading-relaxed">{displayContent}</p>
+            </div>
+          )}
         </div>
       )}
 
