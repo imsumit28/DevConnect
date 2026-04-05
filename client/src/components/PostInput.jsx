@@ -20,30 +20,7 @@ const DEV_EVENTS = [
   { id: 9, title: 'GitHub Universe', date: '2026-10-29', location: 'San Francisco', desc: 'The developer event of the year' },
   { id: 10, title: 'KubeCon Europe', date: '2026-04-01', location: 'Paris', desc: 'Cloud native computing conference' },
   { id: 11, title: 'VueConf US', date: '2026-05-14', location: 'Tampa', desc: 'Official Vue.js conference in the US' },
-  { id: 12, title: 'RustConf', date: '2026-09-05', location: 'Portland', desc: 'Annual Rust programming language conference' },
-  { id: 13, title: 'GraphQL Summit', date: '2026-10-07', location: 'San Diego', desc: 'World\'s largest GraphQL conference' },
-  { id: 14, title: 'DevOps Days London', date: '2026-03-26', location: 'London', desc: 'Community-run DevOps conference' },
-  { id: 15, title: 'Next.js Conf', date: '2026-10-25', location: 'Virtual', desc: 'Vercel\'s annual Next.js conference' },
-];
 
-const PostInput = ({ onPostCreated }) => {
-  const { user } = useContext(AuthContext);
-  const { showToast } = useToast();
-  const [content, setContent] = useState('');
-  const [image, setImage] = useState(null);
-
-const DEV_EVENTS = [
-  { id: 1, title: 'React Summit 2026', date: '2026-06-15', location: 'Amsterdam', desc: 'The biggest React conference in the world' },
-  { id: 2, title: 'NodeConf EU', date: '2026-07-10', location: 'Kilkenny, Ireland', desc: 'Europe\'s premier Node.js conference' },
-  { id: 3, title: 'Google I/O Extended', date: '2026-05-20', location: 'Virtual', desc: 'Developer festival with hands-on workshops' },
-  { id: 4, title: 'AWS re:Invent', date: '2026-11-28', location: 'Las Vegas', desc: 'Cloud computing mega event by Amazon' },
-  { id: 5, title: 'JSConf India', date: '2026-08-12', location: 'Bengaluru', desc: 'JavaScript community conference in India' },
-  { id: 6, title: 'PyCon US 2026', date: '2026-04-23', location: 'Pittsburgh', desc: 'Largest gathering of the Python community' },
-  { id: 7, title: 'DockerCon', date: '2026-09-18', location: 'San Francisco', desc: 'Containerization and DevOps innovation' },
-  { id: 8, title: 'MongoDB World', date: '2026-06-07', location: 'New York', desc: 'The premier event for MongoDB developers' },
-  { id: 9, title: 'GitHub Universe', date: '2026-10-29', location: 'San Francisco', desc: 'The developer event of the year' },
-  { id: 10, title: 'KubeCon Europe', date: '2026-04-01', location: 'Paris', desc: 'Cloud native computing conference' },
-  { id: 11, title: 'VueConf US', date: '2026-05-14', location: 'Tampa', desc: 'Official Vue.js conference in the US' },
   { id: 12, title: 'RustConf', date: '2026-09-05', location: 'Portland', desc: 'Annual Rust programming language conference' },
   { id: 13, title: 'GraphQL Summit', date: '2026-10-07', location: 'San Diego', desc: 'World\'s largest GraphQL conference' },
   { id: 14, title: 'DevOps Days London', date: '2026-03-26', location: 'London', desc: 'Community-run DevOps conference' },
