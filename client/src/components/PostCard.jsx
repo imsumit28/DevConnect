@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy, Check } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { createPortal } from 'react-dom';
 import api from '../services/api';
@@ -10,6 +10,8 @@ import SendModal from './SendModal';
 import { useToast } from '../context/ToastContext';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { resolveMediaUrl } from '../utils/mediaUrl';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const PostCard = ({ postId, user, time, content, image, video, likesList = [], commentsList = [], isActivity = false, activityType = 'none', postType = 'post', articleTitle, eventTitle, eventDate, codeSnippet, codeLanguage, codeTitle, isPinnedDisplay = false, onPin, isRepost = false, originalPost = null, alreadyReposted = false, onRepostStateChange = null }) => {
   const { user: currentUser } = useContext(AuthContext);
@@ -33,6 +35,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const [activeReplyCommentId, setActiveReplyCommentId] = useState('');
   const [replyDraftByComment, setReplyDraftByComment] = useState({});
   const [commentActionLoadingId, setCommentActionLoadingId] = useState('');
+  const [codeCopied, setCodeCopied] = useState(false);
   const displayActionPostId = isRepost && originalPost?._id ? originalPost._id : postId;
   const displayLikesList = isRepost && Array.isArray(originalPost?.likes) ? originalPost.likes : likesList;
   const displayCommentsList = isRepost && Array.isArray(originalPost?.comments) ? originalPost.comments : commentsList;
@@ -298,6 +301,13 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
     }
   };
 
+  const handleCopyCode = (codeText) => {
+    navigator.clipboard.writeText(codeText);
+    setCodeCopied(true);
+    showToast('Copied to clipboard!');
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
   React.useEffect(() => {
     const handleGlobalClick = (e) => {
       if (isMenuOpen && !e.target.closest('.post-menu-container')) {
@@ -477,39 +487,79 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
         </div>
       )}
 
+      {/* ── Modern Code Snippet Card ── */}
       {displayPostType === 'code' && displayCodeSnippet && (
-        <div className="px-4 m-4 mt-0 rounded-2xl overflow-hidden border border-violet-200/80 shadow-sm">
-          {displayCodeTitle && (
-            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 flex items-center justify-between">
-              <h3 className="text-white font-bold text-sm flex items-center gap-2">
-                <Code2 className="w-4 h-4" />
-                {displayCodeTitle}
-              </h3>
-              {displayCodeLanguage && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/80 bg-white/20 px-2.5 py-1 rounded-full">
-                  {displayCodeLanguage}
-                </span>
-              )}
+        <div className="mx-4 mb-3 mt-0 rounded-xl overflow-hidden shadow-lg group/card transition-all duration-300 hover:shadow-2xl hover:shadow-black/10" style={{ border: '1px solid #383838' }}>
+          {/* macOS-style title bar */}
+          <div className="flex items-center px-4 py-2.5 select-none relative" style={{ background: 'linear-gradient(180deg, #3c3c3c 0%, #333 100%)', borderBottom: '1px solid #2a2a2a' }}>
+            <div className="flex gap-2 items-center z-10">
+              <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #ff6d5f, #ff5f56)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
+              <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #ffc44d, #ffbd2e)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
+              <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #4dd964, #27c93f)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
             </div>
-          )}
-          <div className="relative group/code">
-            <pre className="bg-gray-900 text-gray-100 px-4 py-4 text-sm font-mono leading-relaxed overflow-x-auto max-h-80 scrollbar-thin">
-              <code>{displayCodeSnippet}</code>
-            </pre>
+
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="text-[13px] font-medium tracking-wide flex items-center gap-1.5" style={{ color: '#a0a0a0' }}>
+                <Code2 className="w-3.5 h-3.5" style={{ color: '#888' }} />
+                {displayCodeTitle || 'Untitled'}
+              </span>
+            </div>
+
+            {displayCodeLanguage && (
+              <span className="ml-auto text-[10px] uppercase font-bold tracking-widest z-10 px-2.5 py-0.5 rounded-md" style={{ color: '#61dafb', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.15)' }}>
+                {displayCodeLanguage}
+              </span>
+            )}
+          </div>
+
+          {/* Code body with syntax highlighting */}
+          <div className="relative group/code" style={{ background: '#282c34' }}>
+            <div className="overflow-auto" style={{ maxHeight: '26rem', scrollbarWidth: 'thin', scrollbarColor: '#555 transparent' }}>
+              <SyntaxHighlighter
+                language={displayCodeLanguage ? displayCodeLanguage.toLowerCase() : 'javascript'}
+                style={oneDark}
+                customStyle={{
+                  margin: 0,
+                  padding: '1.25rem 1rem',
+                  background: 'transparent',
+                  fontSize: '13px',
+                  lineHeight: '1.75',
+                }}
+                showLineNumbers={true}
+                lineNumberStyle={{
+                  minWidth: '2.5em',
+                  paddingRight: '1em',
+                  color: '#636d83',
+                  fontStyle: 'normal',
+                  userSelect: 'none',
+                }}
+                wrapLines={true}
+              >
+                {displayCodeSnippet}
+              </SyntaxHighlighter>
+            </div>
+
+            {/* Copy button */}
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(displayCodeSnippet);
-                showToast('Code copied to clipboard!');
+              onClick={() => handleCopyCode(displayCodeSnippet)}
+              className="absolute top-3 right-3 p-2 rounded-lg transition-all duration-200 opacity-0 group-hover/code:opacity-100 active:scale-90 flex items-center gap-1.5"
+              style={{
+                background: codeCopied ? 'rgba(39,201,63,0.15)' : 'rgba(255,255,255,0.08)',
+                border: codeCopied ? '1px solid rgba(39,201,63,0.3)' : '1px solid rgba(255,255,255,0.1)',
+                color: codeCopied ? '#27c93f' : '#a0a0a0',
+                backdropFilter: 'blur(8px)',
               }}
-              className="absolute top-3 right-3 bg-gray-700/80 hover:bg-gray-600 text-gray-300 hover:text-white p-2 rounded-lg transition-all opacity-0 group-hover/code:opacity-100 active:scale-90"
               title="Copy code"
             >
-              <Copy className="w-4 h-4" />
+              {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              <span className="text-[11px] font-medium">{codeCopied ? 'Copied!' : 'Copy'}</span>
             </button>
           </div>
+
+          {/* Optional description footer */}
           {displayContent && displayContent !== `💻 Code: ${displayCodeTitle}` && (
-            <div className="bg-gray-50 border-t border-gray-200 px-4 py-3">
-              <p className="text-sm text-gray-600 leading-relaxed">{displayContent}</p>
+            <div className="px-4 py-3" style={{ background: '#21252b', borderTop: '1px solid #2a2a2a' }}>
+              <p className="text-[13px] leading-relaxed" style={{ color: '#9da5b4' }}>{displayContent}</p>
             </div>
           )}
         </div>
