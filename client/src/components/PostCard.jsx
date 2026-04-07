@@ -505,15 +505,31 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
               </span>
             </div>
 
-            {displayCodeLanguage && (
-              <span className="ml-auto text-[10px] uppercase font-bold tracking-widest z-10 px-2.5 py-0.5 rounded-md" style={{ color: '#61dafb', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.15)' }}>
-                {displayCodeLanguage}
-              </span>
-            )}
+            <div className="ml-auto flex items-center gap-2 z-10">
+              {displayCodeLanguage && (
+                <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-md" style={{ color: '#61dafb', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.15)' }}>
+                  {displayCodeLanguage}
+                </span>
+              )}
+              {/* Copy button — always visible in title bar */}
+              <button
+                onClick={() => handleCopyCode(displayCodeSnippet)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all duration-200 active:scale-90"
+                style={{
+                  background: codeCopied ? 'rgba(39,201,63,0.18)' : 'rgba(255,255,255,0.08)',
+                  border: codeCopied ? '1px solid rgba(39,201,63,0.35)' : '1px solid rgba(255,255,255,0.12)',
+                  color: codeCopied ? '#27c93f' : '#c0c0c0',
+                }}
+                title="Copy code"
+              >
+                {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="text-[11px] font-medium">{codeCopied ? 'Copied!' : 'Copy'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Code body with syntax highlighting */}
-          <div className="relative group/code" style={{ background: '#282c34' }}>
+          <div style={{ background: '#282c34' }}>
             <div className="overflow-auto" style={{ maxHeight: '26rem', scrollbarWidth: 'thin', scrollbarColor: '#555 transparent' }}>
               <SyntaxHighlighter
                 language={displayCodeLanguage ? displayCodeLanguage.toLowerCase() : 'javascript'}
@@ -538,22 +554,6 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                 {displayCodeSnippet}
               </SyntaxHighlighter>
             </div>
-
-            {/* Copy button */}
-            <button
-              onClick={() => handleCopyCode(displayCodeSnippet)}
-              className="absolute top-3 right-3 p-2 rounded-lg transition-all duration-200 opacity-0 group-hover/code:opacity-100 active:scale-90 flex items-center gap-1.5"
-              style={{
-                background: codeCopied ? 'rgba(39,201,63,0.15)' : 'rgba(255,255,255,0.08)',
-                border: codeCopied ? '1px solid rgba(39,201,63,0.3)' : '1px solid rgba(255,255,255,0.1)',
-                color: codeCopied ? '#27c93f' : '#a0a0a0',
-                backdropFilter: 'blur(8px)',
-              }}
-              title="Copy code"
-            >
-              {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              <span className="text-[11px] font-medium">{codeCopied ? 'Copied!' : 'Copy'}</span>
-            </button>
           </div>
 
           {/* Optional description footer */}
