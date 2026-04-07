@@ -1,4 +1,5 @@
 import React, { useState, useContext, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Image, Video, Calendar, FileText, X, Clock, MapPin, ExternalLink, Code2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -306,15 +307,15 @@ const PostInput = ({ onPostCreated }) => {
       </div>
 
       {/* ── EVENT MODAL ── */}
-      {showEventModal && (
+      {showEventModal && createPortal(
         <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowEventModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Calendar className="w-5 h-5 text-[#c37d16]" /> Schedule an Event</h2>
               <button onClick={() => setShowEventModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Event Title</label>
                 <input type="text" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="e.g. React Workshop" />
@@ -325,13 +326,7 @@ const PostInput = ({ onPostCreated }) => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description (optional)</label>
-                <textarea value={eventDesc} onChange={(e) => setEventDesc(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none" rows={3} placeholder="Tell people about this event..." />
-              </div>
-
-              <div className="flex items-center justify-end">
-                <button onClick={handleSubmitEvent} disabled={loading} className="bg-[#c37d16] text-white font-semibold px-6 py-2.5 rounded-full hover:bg-[#a96b12] transition-colors disabled:opacity-50 active:scale-95">
-                  {loading ? 'Scheduling...' : '📅 Schedule Event'}
-                </button>
+                <textarea value={eventDesc} onChange={(e) => setEventDesc(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none" rows={2} placeholder="Tell people about this event..." />
               </div>
 
               {/* Pre-populated dev events */}
@@ -352,51 +347,60 @@ const PostInput = ({ onPostCreated }) => {
                 </div>
               </div>
             </div>
+
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 shrink-0">
+              <button onClick={() => setShowEventModal(false)} className="border border-gray-400 text-gray-600 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition-colors">Cancel</button>
+              <button onClick={handleSubmitEvent} disabled={loading} className="bg-[#c37d16] text-white font-semibold px-6 py-2 rounded-full hover:bg-[#a96b12] transition-colors disabled:opacity-50 active:scale-95">
+                {loading ? 'Scheduling...' : '📅 Schedule Event'}
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── ARTICLE MODAL ── */}
-      {showArticleModal && (
+      {showArticleModal && createPortal(
         <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowArticleModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><FileText className="w-5 h-5 text-[#e16745]" /> Write an Article</h2>
               <button onClick={() => setShowArticleModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Article Title</label>
                 <input type="text" value={articleTitle} onChange={(e) => setArticleTitle(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Give your article a compelling title..." />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Content</label>
-                <textarea value={articleContent} onChange={(e) => setArticleContent(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none leading-relaxed" rows={12} placeholder="Write your article here... Share your knowledge, insights, and experience with the community." />
+                <textarea value={articleContent} onChange={(e) => setArticleContent(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none leading-relaxed" rows={6} placeholder="Write your article here... Share your knowledge, insights, and experience with the community." />
                 <p className="text-xs text-gray-400 mt-1 text-right">{articleContent.length} characters</p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 shrink-0">
               <button onClick={() => setShowArticleModal(false)} className="border border-gray-400 text-gray-600 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition-colors">Cancel</button>
               <button onClick={handleSubmitArticle} disabled={loading} className="bg-[#e16745] text-white font-semibold px-6 py-2 rounded-full hover:bg-[#c9553a] transition-colors disabled:opacity-50 active:scale-95">
                 {loading ? 'Publishing...' : '📝 Publish Article'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── CODE MODAL ── */}
-      {showCodeModal && (
+      {showCodeModal && createPortal(
         <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowCodeModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Code2 className="w-5 h-5 text-[#7c3aed]" /> Share Code Snippet</h2>
               <button onClick={() => setShowCodeModal(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Title</label>
                 <input type="text" value={codeTitle} onChange={(e) => setCodeTitle(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all" placeholder="e.g. Custom React Hook for Debounce" />
@@ -428,23 +432,24 @@ const PostInput = ({ onPostCreated }) => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Code</label>
-                <textarea value={codeSnippet} onChange={(e) => setCodeSnippet(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm font-mono bg-gray-900 text-green-400 focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all resize-none leading-relaxed" rows={10} placeholder="Paste or type your code here..." spellCheck={false} />
+                <textarea value={codeSnippet} onChange={(e) => setCodeSnippet(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm font-mono bg-gray-900 text-green-400 focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all resize-none leading-relaxed" rows={5} placeholder="Paste or type your code here..." spellCheck={false} />
                 <p className="text-xs text-gray-400 mt-1 text-right">{codeSnippet.length} characters</p>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description (optional)</label>
-                <textarea value={codeDescription} onChange={(e) => setCodeDescription(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all resize-none" rows={3} placeholder="Explain what this code does, why you wrote it, or how to use it..." />
+                <textarea value={codeDescription} onChange={(e) => setCodeDescription(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all resize-none" rows={2} placeholder="Explain what this code does, why you wrote it, or how to use it..." />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 shrink-0">
               <button onClick={() => setShowCodeModal(false)} className="border border-gray-400 text-gray-600 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition-colors">Cancel</button>
               <button onClick={handleSubmitCode} disabled={loading} className="bg-[#7c3aed] text-white font-semibold px-6 py-2 rounded-full hover:bg-[#6d28d9] transition-colors disabled:opacity-50 active:scale-95">
                 {loading ? 'Sharing...' : '💻 Share Code'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
