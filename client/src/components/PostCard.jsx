@@ -498,23 +498,23 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
               <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #4dd964, #27c93f)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
             </div>
 
-            <div className="flex-1 flex items-center justify-center min-w-0 px-3 pointer-events-none">
-              <span className="text-[13px] font-medium tracking-wide flex items-center gap-1.5 truncate max-w-full" style={{ color: '#a0a0a0' }}>
-                <Code2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#888' }} />
+            <div className="flex-1 flex items-center justify-center min-w-0 px-2 sm:px-3 pointer-events-none">
+              <span className="text-[12px] sm:text-[13px] font-medium tracking-wide flex items-center gap-1.5 truncate max-w-full" style={{ color: '#a0a0a0' }}>
+                <Code2 className="w-3.5 h-3.5 flex-shrink-0 hidden min-[380px]:block" style={{ color: '#888' }} />
                 <span className="truncate">{displayCodeTitle || 'Untitled'}</span>
               </span>
             </div>
 
-            <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+            <div className="ml-auto flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               {displayCodeLanguage && (
-                <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-md max-w-[80px] sm:max-w-none truncate" style={{ color: '#61dafb', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.15)' }}>
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest px-2 sm:px-2.5 py-0.5 rounded-md truncate max-w-[60px] sm:max-w-none" style={{ color: '#61dafb', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.15)' }}>
                   {displayCodeLanguage}
                 </span>
               )}
-              {/* Copy button — always visible in title bar */}
+              {/* Copy button — simplified on mobile */}
               <button
                 onClick={() => handleCopyCode(displayCodeSnippet)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all duration-200 active:scale-90"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-all duration-200 active:scale-90"
                 style={{
                   background: codeCopied ? 'rgba(39,201,63,0.18)' : 'rgba(255,255,255,0.08)',
                   border: codeCopied ? '1px solid rgba(39,201,63,0.35)' : '1px solid rgba(255,255,255,0.12)',
@@ -523,7 +523,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                 title="Copy code"
               >
                 {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="text-[11px] font-medium">{codeCopied ? 'Copied!' : 'Copy'}</span>
+                <span className="hidden sm:inline text-[11px] font-medium">{codeCopied ? 'Copied!' : 'Copy'}</span>
               </button>
             </div>
           </div>
