@@ -2,6 +2,16 @@ const User = require('../models/User');
 const Post = require('../models/Post');
 const Notification = require('../models/Notification');
 
+const withSavedPostUsers = (query) =>
+  query
+    .populate('userId', 'username name profilePic email')
+    .populate('comments.userId', 'username name profilePic email')
+    .populate('comments.replies.userId', 'username name profilePic email')
+    .populate({
+      path: 'originalPost',
+      populate: { path: 'userId', select: 'username name profilePic email' }
+    });
+
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Public
@@ -86,7 +96,8 @@ exports.getMyProfile = async (req, res) => {
     const user = await User.findById(req.user)
       .select('-password')
       .populate('followers', 'username name profilePic email')
-      .populate('following', 'username name profilePic email');
+      .populate('following', 'username name profilePic email')
+      .populate('savedPosts', '_id');
 
     if (user) {
       res.json(user);
@@ -131,12 +142,90 @@ exports.updateUserProfile = async (req, res) => {
         projects: updatedUser.projects,
         followers: updatedUser.followers,
         following: updatedUser.following,
+        savedPosts: updatedUser.savedPosts,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get saved posts for current user
+// @route   GET /api/users/me/saved-posts
+// @access  Private
+exports.getSavedPosts = async (req, res) => {
+  try {
+    const user = await User.findById(req.user).select('savedPosts');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const savedPostIds = Array.isArray(user.savedPosts)
+      ? user.savedPosts.map((id) => String(id))
+      : [];
+
+    const savedPosts = await withSavedPostUsers(
+      Post.find({ _id: { $in: savedPostIds } }).sort({ createdAt: -1 })
+    );
+
+    const orderMap = new Map(savedPostIds.map((id, index) => [id, index]));
+    const orderedPosts = [...savedPosts].sort((a, b) => {
+      const aIndex = orderMap.get(String(a._id)) ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = orderMap.get(String(b._id)) ?? Number.MAX_SAFE_INTEGER;
+      return aIndex - bIndex;
+    });
+
+    const payload = orderedPosts.map((postDoc) => {
+      const post = typeof postDoc?.toObject === 'function' ? postDoc.toObject() : postDoc;
+      return {
+        ...post,
+        isSaved: true,
+      };
+    });
+
+    return res.json(payload);
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Toggle saved state for a post
+// @route   PUT /api/users/me/saved-posts/:postId
+// @access  Private
+exports.toggleSavedPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const user = await User.findById(req.user);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const currentSaved = Array.isArray(user.savedPosts) ? user.savedPosts : [];
+    const alreadySaved = currentSaved.some((id) => String(id) === String(postId));
+
+    if (alreadySaved) {
+      user.savedPosts = currentSaved.filter((id) => String(id) !== String(postId));
+    } else {
+      user.savedPosts = [post._id, ...currentSaved];
+    }
+
+    await user.save();
+
+    return res.json({
+      message: alreadySaved ? 'Post removed from saved posts' : 'Post saved',
+      isSaved: !alreadySaved,
+      postId: String(post._id),
+      savedPosts: user.savedPosts,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

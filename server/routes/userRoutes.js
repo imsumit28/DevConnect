@@ -11,7 +11,9 @@ const {
   getUserActivity,
   viewProfile,
   checkUsernameAvailability,
-  addUserProject
+  addUserProject,
+  getSavedPosts,
+  toggleSavedPost
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 
@@ -19,6 +21,8 @@ router.get('/search', searchUsers);
 router.get('/check-username/:username', checkUsernameAvailability);
 router.get('/', getAllUsers);
 router.get('/me/profile', protect, getMyProfile);
+router.get('/me/saved-posts', protect, getSavedPosts);
+router.put('/me/saved-posts/:postId', protect, toggleSavedPost);
 router.get('/:username', getUserProfile);
 router.put('/:username/view', viewProfile);
 router.get('/:userId/activity', getUserActivity);

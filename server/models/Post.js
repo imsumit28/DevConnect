@@ -48,6 +48,19 @@ const postSchema = new mongoose.Schema({
   codeTitle: {
     type: String,
   },
+  codeFileName: {
+    type: String,
+  },
+  codeDifficulty: {
+    type: String,
+    enum: ['Beginner', 'Intermediate', 'Advanced', ''],
+    default: '',
+  },
+  codeReadTime: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
   isPinned: {
     type: Boolean,
     default: false,

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useRef } from 'react';
+import React, { useState, useContext, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Image, Video, Calendar, FileText, X, Clock, MapPin, ExternalLink, Code2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
@@ -8,6 +8,7 @@ import { compressImageFile } from '../utils/imageCompression';
 
 const MAX_VIDEO_SIZE_BYTES = 5 * 1024 * 1024;
 const VIDEO_SIZE_ERROR = 'video till 5mb is allowed or compress video to 5 mb';
+const ACTIVE_HASHTAG_REGEX = /(^|\s)#([a-z0-9_]*)$/i;
 
 const DEV_EVENTS = [
   { id: 1, title: 'React Summit 2026', date: '2026-06-15', location: 'Amsterdam', desc: 'The biggest React conference in the world' },
@@ -37,6 +38,10 @@ const PostInput = ({ onPostCreated }) => {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const postInputRef = useRef(null);
+  const [hashtagSuggestions, setHashtagSuggestions] = useState([]);
+  const [showHashtagSuggestions, setShowHashtagSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
 
   // Modal states
   const [showEventModal, setShowEventModal] = useState(false);
@@ -56,7 +61,79 @@ const PostInput = ({ onPostCreated }) => {
   const [codeTitle, setCodeTitle] = useState('');
   const [codeSnippet, setCodeSnippet] = useState('');
   const [codeLanguage, setCodeLanguage] = useState('javascript');
+  const [codeFileName, setCodeFileName] = useState('');
+  const [codeDifficulty, setCodeDifficulty] = useState('Intermediate');
+  const [codeReadTime, setCodeReadTime] = useState('3');
   const [codeDescription, setCodeDescription] = useState('');
+
+  const getActiveHashtagQuery = (value, cursorPosition) => {
+    const uptoCursor = value.slice(0, cursorPosition);
+    const match = uptoCursor.match(ACTIVE_HASHTAG_REGEX);
+    return match ? match[2].toLowerCase() : '';
+  };
+
+  const insertSuggestion = (tag) => {
+    const input = postInputRef.current;
+    if (!input) return;
+
+    const cursorStart = input.selectionStart ?? content.length;
+    const cursorEnd = input.selectionEnd ?? content.length;
+    const beforeCursor = content.slice(0, cursorStart);
+    const afterCursor = content.slice(cursorEnd);
+    const match = beforeCursor.match(ACTIVE_HASHTAG_REGEX);
+
+    if (!match) return;
+
+    const replaceStart = cursorStart - match[2].length;
+    const nextValue = `${content.slice(0, replaceStart)}${tag} ${afterCursor}`;
+    const nextCursor = replaceStart + tag.length + 1;
+
+    setContent(nextValue);
+    setShowHashtagSuggestions(false);
+    setActiveSuggestionIndex(0);
+
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(nextCursor, nextCursor);
+    });
+  };
+
+  useEffect(() => {
+    const input = postInputRef.current;
+    const cursorPosition = input?.selectionStart ?? content.length;
+    const query = getActiveHashtagQuery(content, cursorPosition);
+
+    if (!query) {
+      setHashtagSuggestions([]);
+      setShowHashtagSuggestions(false);
+      setActiveSuggestionIndex(0);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.get('/posts/hashtag-suggestions', {
+          params: { q: query },
+        });
+
+        if (cancelled) return;
+
+        setHashtagSuggestions(res.data || []);
+        setShowHashtagSuggestions((res.data || []).length > 0);
+        setActiveSuggestionIndex(0);
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load hashtag suggestions', error);
+        }
+      }
+    }, 160);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [content]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,6 +175,8 @@ const PostInput = ({ onPostCreated }) => {
 
       const res = await api.post('/posts', { content, image: imageUrl, video: videoUrl });
       setContent('');
+      setHashtagSuggestions([]);
+      setShowHashtagSuggestions(false);
       setImage(null);
       setVideo(null);
       if (onPostCreated) onPostCreated(res.data);
@@ -127,6 +206,23 @@ const PostInput = ({ onPostCreated }) => {
       return;
     }
     setVideo(file);
+  };
+
+  const handleContentKeyDown = (e) => {
+    if (!showHashtagSuggestions || hashtagSuggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveSuggestionIndex((prev) => (prev + 1) % hashtagSuggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveSuggestionIndex((prev) => (prev - 1 + hashtagSuggestions.length) % hashtagSuggestions.length);
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      insertSuggestion(`#${hashtagSuggestions[activeSuggestionIndex].tag}`);
+    } else if (e.key === 'Escape') {
+      setShowHashtagSuggestions(false);
+    }
   };
 
   const handleSubmitEvent = async () => {
@@ -194,11 +290,17 @@ const PostInput = ({ onPostCreated }) => {
         codeTitle,
         codeSnippet,
         codeLanguage,
+        codeFileName,
+        codeDifficulty,
+        codeReadTime: Number(codeReadTime) || 0,
       });
       setShowCodeModal(false);
       setCodeTitle('');
       setCodeSnippet('');
       setCodeLanguage('javascript');
+      setCodeFileName('');
+      setCodeDifficulty('Intermediate');
+      setCodeReadTime('3');
       setCodeDescription('');
       if (onPostCreated) onPostCreated(res.data);
       showToast('Code snippet shared!');
@@ -220,9 +322,17 @@ const PostInput = ({ onPostCreated }) => {
             className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm border border-gray-100 shrink-0"
           />
           <input 
+            ref={postInputRef}
             type="text"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onFocus={() => {
+              if (hashtagSuggestions.length > 0) setShowHashtagSuggestions(true);
+            }}
+            onBlur={() => {
+              setTimeout(() => setShowHashtagSuggestions(false), 120);
+            }}
+            onKeyDown={handleContentKeyDown}
             placeholder="Start a post..."
             className="flex-1 min-w-0 bg-gray-100 hover:bg-gray-200 border border-transparent focus:border-gray-300 focus:bg-white rounded-full px-3 sm:px-5 py-2.5 sm:py-3 text-gray-700 outline-none transition-all text-sm sm:text-base"
           />
@@ -234,6 +344,36 @@ const PostInput = ({ onPostCreated }) => {
             {loading ? 'Posting...' : 'Post'}
           </button>
         </form>
+
+        {showHashtagSuggestions && hashtagSuggestions.length > 0 && (
+          <div className="mt-3 rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-2 shadow-sm">
+            <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700/75">
+              Suggested hashtags
+            </p>
+            <div className="space-y-1">
+              {hashtagSuggestions.map((suggestion, index) => (
+                <button
+                  key={suggestion.tag}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    insertSuggestion(suggestion.label);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition-colors ${
+                    index === activeSuggestionIndex ? 'bg-white text-primary shadow-sm' : 'text-gray-700 hover:bg-white/80'
+                  }`}
+                >
+                  <span className="font-semibold">{suggestion.label}</span>
+                  <span className="text-xs text-gray-500">{suggestion.count} {suggestion.count === 1 ? 'post' : 'posts'}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="mt-2 px-1 text-[11px] text-gray-500">
+          Type `#` while writing to get hashtag suggestions.
+        </p>
 
         {/* Image preview */}
         {image && (
@@ -429,6 +569,42 @@ const PostInput = ({ onPostCreated }) => {
                   <option value="yaml">YAML</option>
                   <option value="other">Other</option>
                 </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">File Name</label>
+                  <input
+                    type="text"
+                    value={codeFileName}
+                    onChange={(e) => setCodeFileName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all"
+                    placeholder="app.js"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Difficulty</label>
+                  <select
+                    value={codeDifficulty}
+                    onChange={(e) => setCodeDifficulty(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all bg-white"
+                  >
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Read Time (min)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={codeReadTime}
+                    onChange={(e) => setCodeReadTime(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent outline-none transition-all"
+                    placeholder="3"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Code</label>

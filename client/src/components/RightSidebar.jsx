@@ -1,46 +1,9 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { Plus, Check, ChevronDown, Sparkles, TrendingUp, UserPlus2, Hash } from 'lucide-react';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-
-const ALL_HASHTAGS = [
-  { tag: '#ReactJS', posts: '25,402' },
-  { tag: '#WebDevelopment', posts: '14,923' },
-  { tag: '#MERNStack', posts: '8,210' },
-  { tag: '#JavaScript', posts: '42,891' },
-  { tag: '#TypeScript', posts: '19,305' },
-  { tag: '#NodeJS', posts: '31,742' },
-  { tag: '#Python', posts: '55,120' },
-  { tag: '#DevOps', posts: '12,654' },
-  { tag: '#Docker', posts: '9,811' },
-  { tag: '#Kubernetes', posts: '7,432' },
-  { tag: '#AWS', posts: '18,903' },
-  { tag: '#MachineLearning', posts: '22,154' },
-  { tag: '#AI', posts: '38,772' },
-  { tag: '#CyberSecurity', posts: '11,203' },
-  { tag: '#Git', posts: '15,890' },
-  { tag: '#NextJS', posts: '13,456' },
-  { tag: '#TailwindCSS', posts: '10,287' },
-  { tag: '#Flutter', posts: '8,934' },
-  { tag: '#Rust', posts: '6,721' },
-  { tag: '#GoLang', posts: '7,102' },
-  { tag: '#GraphQL', posts: '5,891' },
-  { tag: '#MongoDB', posts: '9,234' },
-  { tag: '#PostgreSQL', posts: '8,456' },
-  { tag: '#SystemDesign', posts: '14,312' },
-  { tag: '#OpenSource', posts: '11,876' },
-];
-
-function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 function getMutualConnections(user) {
   const seed = String(user?.username || user?._id || 'devconnect')
@@ -142,12 +105,12 @@ const SuggestedUser = ({ user, onFollowed, index = 0, animateReady = false }) =>
   );
 };
 
-const RightSidebar = () => {
+const RightSidebar = ({ activeTag = '' }) => {
   const { user: currentUser } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [hoveredTag, setHoveredTag] = useState('');
-  const [displayedTopics, setDisplayedTopics] = useState(() => shuffleArray(ALL_HASHTAGS).slice(0, 3));
-  const [animateUsers, setAnimateUsers] = useState(false);
+  const [trendingTopics, setTrendingTopics] = useState([]);
+  const [topicOffset, setTopicOffset] = useState(0);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -163,13 +126,31 @@ const RightSidebar = () => {
   }, [currentUser?._id]);
 
   useEffect(() => {
-    setAnimateUsers(false);
-    const timer = setTimeout(() => setAnimateUsers(true), 40);
-    return () => clearTimeout(timer);
-  }, [users.length]);
+    const fetchTrendingTopics = async () => {
+      try {
+        const res = await api.get('/posts/trending-tags');
+        setTrendingTopics(res.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchTrendingTopics();
+  }, []);
+
+  const displayedTopics = useMemo(() => {
+    if (!trendingTopics.length) return [];
+
+    const nextTopics = [];
+    for (let i = 0; i < Math.min(4, trendingTopics.length); i += 1) {
+      nextTopics.push(trendingTopics[(topicOffset + i) % trendingTopics.length]);
+    }
+    return nextTopics;
+  }, [topicOffset, trendingTopics]);
 
   const loadMoreTopics = () => {
-    setDisplayedTopics(shuffleArray(ALL_HASHTAGS).slice(0, 3));
+    if (!trendingTopics.length) return;
+    setTopicOffset((prev) => (prev + 4) % trendingTopics.length);
   };
 
   return (
@@ -185,7 +166,7 @@ const RightSidebar = () => {
         {users.length > 0 ? (
           <div className="space-y-3">
             {users.map((u, index) => (
-              <SuggestedUser key={u._id} user={u} onFollowed={() => {}} index={index} animateReady={animateUsers} />
+              <SuggestedUser key={u._id} user={u} onFollowed={() => {}} index={index} animateReady={users.length > 0} />
             ))}
           </div>
         ) : (
@@ -199,36 +180,46 @@ const RightSidebar = () => {
           Trending Topics
         </h3>
         <p className="text-xs text-gray-500 mb-3">Tap a tag to filter your feed.</p>
-        <ul className="space-y-2">
-          {displayedTopics.map((topic, idx) => (
-            <li
-              key={topic.tag} 
-              className="text-sm transition-all duration-200"
-              style={{ animationDelay: `${idx * 50}ms` }}
-            >
-              <Link
-                to={`/?tag=${encodeURIComponent(topic.tag.replace('#', ''))}`}
-                onMouseEnter={() => setHoveredTag(topic.tag)}
-                onMouseLeave={() => setHoveredTag('')}
-                className="block rounded-xl border border-gray-100 bg-gray-50/70 p-2.5 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm"
-              >
-                <span className="font-semibold text-gray-900 flex items-center gap-1.5">
-                  <Hash className={`w-3.5 h-3.5 ${hoveredTag === topic.tag ? 'text-primary' : 'text-gray-500'} transition-colors`} />
-                  {topic.tag.replace('#', '')}
-                </span>
-                <span className="text-xs text-gray-500">{topic.posts} posts</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {displayedTopics.length > 0 ? (
+          <ul className="space-y-2">
+            {displayedTopics.map((topic, idx) => {
+              const isActive = activeTag === topic.tag;
+              return (
+                <li
+                  key={topic.tag}
+                  className="text-sm transition-all duration-200"
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
+                  <Link
+                    to={`/?tag=${encodeURIComponent(topic.tag)}`}
+                    onMouseEnter={() => setHoveredTag(topic.tag)}
+                    onMouseLeave={() => setHoveredTag('')}
+                    className={`block rounded-xl border p-2.5 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm ${
+                      isActive ? 'border-blue-200 bg-blue-50 shadow-sm' : 'border-gray-100 bg-gray-50/70'
+                    }`}
+                  >
+                    <span className="font-semibold text-gray-900 flex items-center gap-1.5">
+                      <Hash className={`w-3.5 h-3.5 ${(hoveredTag === topic.tag || isActive) ? 'text-primary' : 'text-gray-500'} transition-colors`} />
+                      {topic.tag}
+                    </span>
+                    <span className="text-xs text-gray-500">{topic.count} {topic.count === 1 ? 'post' : 'posts'}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="text-xs text-gray-500">No hashtags are trending yet.</p>
+        )}
 
         <button
           onClick={loadMoreTopics}
+          disabled={trendingTopics.length <= displayedTopics.length}
           className="mt-3 w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-primary hover:bg-blue-50 rounded-xl py-2 transition-all duration-300 active:scale-95 border border-blue-100"
         >
           <Sparkles className="w-4 h-4" />
           <ChevronDown className="w-4 h-4" />
-          Load more
+          {trendingTopics.length > displayedTopics.length ? 'Load more' : 'Up to date'}
         </button>
       </div>
     </div>

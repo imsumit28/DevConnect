@@ -10,6 +10,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { FilterX } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { socketUrl } from '../utils/runtimeConfig';
+import { normalizeHashtag } from '../utils/hashtags';
 
 const HOME_WELCOME_EVENT_KEY = 'dc_home_welcome_event';
 
@@ -17,7 +18,7 @@ const Home = () => {
   const { user: currentUser } = useContext(AuthContext);
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const activeTag = params.get('tag');
+  const activeTag = normalizeHashtag(params.get('tag'));
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,8 +83,11 @@ const Home = () => {
     };
 
     const fetchPosts = async () => {
+      setLoading(true);
       try {
-        const res = await api.get('/posts');
+        const res = await api.get('/posts', {
+          params: activeTag ? { tag: activeTag } : {},
+        });
         setPosts(res.data);
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -143,17 +147,12 @@ const Home = () => {
     });
 
     return () => socket.disconnect();
-  }, [currentUserId]);
+  }, [activeTag, currentUserId]);
 
   // Socket handles incoming posts now, so this callback is purely optional for immediate UI feedback.
   const handlePostCreated = () => {
     // Left empty since socket.on('postCreated') will inject it, avoiding duplicates
   };
-
-  const postIdentityKey = useMemo(
-    () => posts.map((p) => p._id).join('|'),
-    [posts]
-  );
 
   useEffect(() => {
     if (sortMode !== 'Top') return;
@@ -166,7 +165,7 @@ const Home = () => {
       })
       .map((p) => p._id);
     setTopOrderIds(rankedIds);
-  }, [sortMode, postIdentityKey]);
+  }, [posts, sortMode]);
 
   const sortedPosts = useMemo(() => {
     if (sortMode === 'Top') {
@@ -192,13 +191,7 @@ const Home = () => {
     return ids;
   }, [posts, currentUser?._id, currentUser?.id]);
 
-  const filteredPosts = activeTag
-    ? sortedPosts.filter((post) => {
-        const source = `${post.content || ''} ${post.articleTitle || ''} ${post.eventTitle || ''}`.toLowerCase();
-        const needle = `#${activeTag.toLowerCase()}`;
-        return source.includes(needle);
-      })
-    : sortedPosts;
+  const filteredPosts = sortedPosts;
 
   const handleRepostStateChange = (targetPostId, isReposted) => {
     const targetId = String(targetPostId || '');
@@ -277,7 +270,7 @@ const Home = () => {
 
           {/* Mobile Discover Section */}
           <div className="lg:hidden">
-            <RightSidebar />
+            <RightSidebar activeTag={activeTag} />
           </div>
 
           {activeTag && (
@@ -332,6 +325,11 @@ const Home = () => {
                 codeSnippet={post.codeSnippet}
                 codeLanguage={post.codeLanguage}
                 codeTitle={post.codeTitle}
+                codeFileName={post.codeFileName}
+                codeDifficulty={post.codeDifficulty}
+                codeReadTime={post.codeReadTime}
+                hashtags={post.hashtags}
+                isSaved={Boolean(post.isSaved)}
                 isRepost={post.isRepost}
                 originalPost={post.originalPost}
                 alreadyReposted={Boolean(post.viewerHasReposted) || repostedOriginalIds.has(String(post._id))}
@@ -347,7 +345,7 @@ const Home = () => {
 
         {/* Right Sidebar (Hidden on small screens, shown on lg) */}
         <div className="hidden lg:block lg:order-3 lg:col-span-3">
-          <RightSidebar />
+          <RightSidebar activeTag={activeTag} />
         </div>
 
       </main>

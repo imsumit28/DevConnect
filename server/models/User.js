@@ -76,6 +76,10 @@ const userSchema = new mongoose.Schema({
     ref: 'Post',
     default: null,
   },
+  savedPosts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
+  }],
   profileViews: {
     type: Number,
     default: 0,

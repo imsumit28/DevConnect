@@ -4,6 +4,8 @@ const {
   createPost,
   getPosts,
   getPostsByUserId,
+  getTrendingTags,
+  getHashtagSuggestions,
   likePost,
   addComment,
   toggleCommentLike,
@@ -18,6 +20,8 @@ const { protect } = require('../middleware/auth');
 
 router.post('/', protect, createPost);
 router.get('/', protect, getPosts);
+router.get('/trending-tags', protect, getTrendingTags);
+router.get('/hashtag-suggestions', protect, getHashtagSuggestions);
 router.get('/pinned/:userId', protect, getPinnedPost);
 router.get('/user/:userId', protect, getPostsByUserId);
 router.post('/activity', protect, logActivity);

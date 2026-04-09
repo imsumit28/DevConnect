@@ -2,6 +2,55 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 
+const HASHTAG_REGEX = /(^|\s)#([a-z0-9_]{2,50})/gi;
+
+const collectPostText = (post = {}) =>
+  [
+    post.content,
+    post.articleTitle,
+    post.eventTitle,
+    post.codeTitle,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+const extractHashtags = (input = '') => {
+  const text = String(input || '');
+  const tags = new Set();
+  let match;
+
+  while ((match = HASHTAG_REGEX.exec(text)) !== null) {
+    tags.add(match[2].toLowerCase());
+  }
+
+  return [...tags];
+};
+
+const extractPostHashtags = (post = {}) => extractHashtags(collectPostText(post));
+
+const serializePost = (postDoc) => {
+  const post = typeof postDoc?.toObject === 'function' ? postDoc.toObject() : postDoc;
+  return {
+    ...post,
+    hashtags: extractPostHashtags(post),
+  };
+};
+
+const serializePosts = (posts = []) => posts.map(serializePost);
+
+const addViewerSavedState = (posts = [], savedIds = new Set()) =>
+  posts.map((post) => {
+    const postId = post?._id ? String(post._id) : '';
+    const originalId = post?.originalPost?._id
+      ? String(post.originalPost._id)
+      : (post?.originalPost ? String(post.originalPost) : '');
+
+    return {
+      ...post,
+      isSaved: savedIds.has(postId) || (originalId ? savedIds.has(originalId) : false),
+    };
+  });
+
 const withCommentUsers = (query) =>
   query
     .populate('comments.userId', 'username name profilePic email')
@@ -37,7 +86,9 @@ exports.getPostsByUserId = async (req, res) => {
       })
       .sort({ createdAt: -1 })
     );
-    res.json(posts);
+    const viewer = await User.findById(req.user).select('savedPosts');
+    const savedIds = new Set((viewer?.savedPosts || []).map((id) => String(id)));
+    res.json(addViewerSavedState(serializePosts(posts), savedIds));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -60,6 +111,9 @@ exports.createPost = async (req, res) => {
       codeSnippet: req.body.codeSnippet || '',
       codeLanguage: req.body.codeLanguage || '',
       codeTitle: req.body.codeTitle || '',
+      codeFileName: req.body.codeFileName || '',
+      codeDifficulty: req.body.codeDifficulty || '',
+      codeReadTime: Number(req.body.codeReadTime) || 0,
     });
 
     const savedPost = await newPost.save();
@@ -67,9 +121,11 @@ exports.createPost = async (req, res) => {
     const populatedPost = await Post.findById(savedPost._id)
        .populate('userId', 'username name profilePic email');
 
-    req.app.get('io').emit('postCreated', populatedPost);
+    const serializedPost = serializePost(populatedPost);
 
-    res.status(201).json(populatedPost);
+    req.app.get('io').emit('postCreated', serializedPost);
+
+    res.status(201).json(serializedPost);
   } catch (error) {
     console.error("CREATE POST ERROR:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -81,6 +137,7 @@ exports.createPost = async (req, res) => {
 // @access  Protected
 exports.getPosts = async (req, res) => {
   try {
+    const activeTag = String(req.query.tag || '').trim().toLowerCase();
     const posts = await withCommentUsers(
       Post.find({ isActivity: { $ne: true } })
       .populate('userId', 'username name profilePic email')
@@ -95,6 +152,8 @@ exports.getPosts = async (req, res) => {
       isRepost: true,
       originalPost: { $ne: null }
     }).select('originalPost');
+    const viewer = await User.findById(req.user).select('savedPosts');
+    const savedIds = new Set((viewer?.savedPosts || []).map((id) => String(id)));
 
     const viewerRepostedOriginalIds = new Set(
       viewerReposts
@@ -103,7 +162,7 @@ exports.getPosts = async (req, res) => {
     );
 
     const postsWithRepostState = posts.map((postDoc) => {
-      const post = postDoc.toObject();
+      const post = serializePost(postDoc);
       const postId = post?._id ? String(post._id) : '';
       const originalId = post?.originalPost?._id
         ? String(post.originalPost._id)
@@ -116,7 +175,92 @@ exports.getPosts = async (req, res) => {
       return post;
     });
 
-    res.json(postsWithRepostState);
+    const filteredPosts = activeTag
+      ? postsWithRepostState.filter((post) => post.hashtags.includes(activeTag))
+      : postsWithRepostState;
+
+    res.json(addViewerSavedState(filteredPosts, savedIds));
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get trending hashtags
+// @route   GET /api/posts/trending-tags
+// @access  Protected
+exports.getTrendingTags = async (req, res) => {
+  try {
+    const posts = await Post.find({ isActivity: { $ne: true } })
+      .select('content articleTitle eventTitle codeTitle createdAt')
+      .lean();
+
+    const counts = new Map();
+
+    posts.forEach((post) => {
+      extractPostHashtags(post).forEach((tag) => {
+        counts.set(tag, (counts.get(tag) || 0) + 1);
+      });
+    });
+
+    const trending = [...counts.entries()]
+      .map(([tag, count]) => ({
+        tag,
+        label: `#${tag}`,
+        count,
+      }))
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.tag.localeCompare(b.tag);
+      })
+      .slice(0, 8);
+
+    res.json(trending);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get hashtag suggestions
+// @route   GET /api/posts/hashtag-suggestions
+// @access  Protected
+exports.getHashtagSuggestions = async (req, res) => {
+  try {
+    const query = String(req.query.q || '')
+      .trim()
+      .replace(/^#/, '')
+      .toLowerCase();
+
+    if (!query) {
+      return res.json([]);
+    }
+
+    const posts = await Post.find({ isActivity: { $ne: true } })
+      .select('content articleTitle eventTitle codeTitle')
+      .lean();
+
+    const counts = new Map();
+
+    posts.forEach((post) => {
+      extractPostHashtags(post)
+        .filter((tag) => tag.startsWith(query))
+        .forEach((tag) => {
+          counts.set(tag, (counts.get(tag) || 0) + 1);
+        });
+    });
+
+    const suggestions = [...counts.entries()]
+      .map(([tag, count]) => ({
+        tag,
+        label: `#${tag}`,
+        count,
+      }))
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.tag.localeCompare(b.tag);
+      })
+      .slice(0, 6);
+
+    res.json(suggestions);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -165,13 +309,15 @@ exports.likePost = async (req, res) => {
       }
 
       const updatedPost = await withFullPostDataById(req.params.id);
-      req.app.get('io').emit('postUpdated', updatedPost);
-      res.status(200).json({ message: 'Post liked', post: updatedPost });
+      const serializedPost = serializePost(updatedPost);
+      req.app.get('io').emit('postUpdated', serializedPost);
+      res.status(200).json({ message: 'Post liked', post: serializedPost });
     } else {
       await post.updateOne({ $pull: { likes: req.user } });
       const updatedPost = await withFullPostDataById(req.params.id);
-      req.app.get('io').emit('postUpdated', updatedPost);
-      res.status(200).json({ message: 'Post unliked', post: updatedPost });
+      const serializedPost = serializePost(updatedPost);
+      req.app.get('io').emit('postUpdated', serializedPost);
+      res.status(200).json({ message: 'Post unliked', post: serializedPost });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -198,9 +344,10 @@ exports.addComment = async (req, res) => {
     // Return the updated post with populated user data in comments
     const updatedPost = await withFullPostDataById(req.params.id);
 
-    req.app.get('io').emit('postUpdated', updatedPost);
+    const serializedPost = serializePost(updatedPost);
+    req.app.get('io').emit('postUpdated', serializedPost);
 
-    res.status(201).json(updatedPost);
+    res.status(201).json(serializedPost);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -235,11 +382,12 @@ exports.toggleCommentLike = async (req, res) => {
 
     await post.save();
     const updatedPost = await withFullPostDataById(id);
-    req.app.get('io').emit('postUpdated', updatedPost);
+    const serializedPost = serializePost(updatedPost);
+    req.app.get('io').emit('postUpdated', serializedPost);
 
     return res.status(200).json({
       message: likeIndex >= 0 ? 'Comment unliked' : 'Comment liked',
-      post: updatedPost,
+      post: serializedPost,
     });
   } catch (error) {
     return res.status(500).json({ message: 'Server error', error: error.message });
@@ -277,9 +425,10 @@ exports.addCommentReply = async (req, res) => {
 
     await post.save();
     const updatedPost = await withFullPostDataById(id);
-    req.app.get('io').emit('postUpdated', updatedPost);
+    const serializedPost = serializePost(updatedPost);
+    req.app.get('io').emit('postUpdated', serializedPost);
 
-    return res.status(201).json(updatedPost);
+    return res.status(201).json(serializedPost);
   } catch (error) {
     return res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -388,11 +537,13 @@ exports.repostPost = async (req, res) => {
       });
     }
 
-    req.app.get('io').emit('postCreated', populatedPost);
+    const serializedPost = serializePost(populatedPost);
+
+    req.app.get('io').emit('postCreated', serializedPost);
     res.status(201).json({
       message: 'Post reposted to your profile',
       action: 'reposted',
-      post: populatedPost,
+      post: serializedPost,
       postId: trueOriginalId.toString(),
     });
 
@@ -415,9 +566,10 @@ exports.logActivity = async (req, res) => {
     const populatedActivity = await Post.findById(newActivity._id)
       .populate('userId', 'username name profilePic email');
 
-    req.app.get('io').emit('postCreated', populatedActivity);
+    const serializedActivity = serializePost(populatedActivity);
+    req.app.get('io').emit('postCreated', serializedActivity);
 
-    res.status(201).json(populatedActivity);
+    res.status(201).json(serializedActivity);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -450,7 +602,7 @@ exports.togglePinPost = async (req, res) => {
         .populate('userId', 'username name profilePic email')
         .populate('comments.userId', 'username name profilePic email')
         .populate('comments.replies.userId', 'username name profilePic email');
-      return res.json({ message: 'Post pinned', pinnedPost: pinned });
+      return res.json({ message: 'Post pinned', pinnedPost: serializePost(pinned) });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -469,7 +621,10 @@ exports.getPinnedPost = async (req, res) => {
       .populate('userId', 'username name profilePic email')
       .populate('comments.userId', 'username name profilePic email')
       .populate('comments.replies.userId', 'username name profilePic email');
-    res.json(post);
+    const viewer = await User.findById(req.user).select('savedPosts');
+    const savedIds = new Set((viewer?.savedPosts || []).map((id) => String(id)));
+    const [serializedPost] = addViewerSavedState([serializePost(post)], savedIds);
+    res.json(serializedPost);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

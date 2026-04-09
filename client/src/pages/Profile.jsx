@@ -1,5 +1,5 @@
 import React, { useState, useRef, useContext, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 import PostInput from '../components/PostInput';
@@ -15,7 +15,6 @@ import { compressImageFile } from '../utils/imageCompression';
 const Profile = () => {
   const { user: currentUser, updateUser } = useContext(AuthContext); 
   const { username } = useParams();
-  const navigate = useNavigate();
   const { showToast } = useToast();
   const [profileUser, setProfileUser] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -46,6 +45,7 @@ const Profile = () => {
   const [likedPosts, setLikedPosts] = useState([]);
   const [commentedPosts, setCommentedPosts] = useState([]);
   const [articlePosts, setArticlePosts] = useState([]);
+  const [savedPosts, setSavedPosts] = useState([]);
   const [pinnedPost, setPinnedPost] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -273,6 +273,61 @@ const Profile = () => {
     () => (posts || []).filter(isEventPost),
     [posts]
   );
+  const savedPostIds = useMemo(
+    () => new Set((savedPosts || []).map((post) => String(post?._id || ''))),
+    [savedPosts]
+  );
+
+  const syncSavedStateInList = (list, targetPostId, nextSaved) =>
+    (list || []).map((post) => {
+      const postId = String(post?._id || '');
+      const originalId = String(post?.originalPost?._id || post?.originalPost || '');
+      if (postId === targetPostId || originalId === targetPostId) {
+        return { ...post, isSaved: nextSaved };
+      }
+      return post;
+    });
+
+  const handleSavedStateChange = (targetPostId, nextSaved) => {
+    setPosts((current) => syncSavedStateInList(current, targetPostId, nextSaved));
+    setLikedPosts((current) => syncSavedStateInList(current, targetPostId, nextSaved));
+    setCommentedPosts((current) => syncSavedStateInList(current, targetPostId, nextSaved));
+    setArticlePosts((current) => syncSavedStateInList(current, targetPostId, nextSaved));
+    setPinnedPost((current) => {
+      if (!current) return current;
+      const currentId = String(current?._id || '');
+      const originalId = String(current?.originalPost?._id || current?.originalPost || '');
+      if (currentId === targetPostId || originalId === targetPostId) {
+        return { ...current, isSaved: nextSaved };
+      }
+      return current;
+    });
+
+    setSavedPosts((current) => {
+      if (nextSaved) {
+        const existing = (current || []).find((post) => String(post?._id || '') === targetPostId);
+        if (existing) {
+          return syncSavedStateInList(current, targetPostId, true);
+        }
+        const candidate =
+          [...(posts || []), ...(likedPosts || []), ...(commentedPosts || []), ...(articlePosts || []), ...(pinnedPost ? [pinnedPost] : [])]
+            .find((post) => {
+              const postId = String(post?._id || '');
+              const originalId = String(post?.originalPost?._id || post?.originalPost || '');
+              return postId === targetPostId || originalId === targetPostId;
+            });
+        return candidate ? [{ ...candidate, isSaved: true }, ...(current || [])] : current;
+      }
+      return (current || []).filter((post) => String(post?._id || '') !== targetPostId);
+    });
+
+    if (isOwnProfile && updateUser) {
+      const existingIds = new Set((currentUser?.savedPosts || []).map((value) => String(value?._id || value || '')));
+      if (nextSaved) existingIds.add(String(targetPostId));
+      else existingIds.delete(String(targetPostId));
+      updateUser({ savedPosts: [...existingIds] });
+    }
+  };
 
   // Fetch posts for the displayed user
   useEffect(() => {
@@ -299,12 +354,20 @@ const Profile = () => {
         .then(res => setCommentedPosts(res.data))
         .catch(err => console.error("Failed to fetch commented posts", err));
 
+      if (isOwnProfile) {
+        api.get('/users/me/saved-posts')
+          .then(res => setSavedPosts(res.data))
+          .catch(err => console.error("Failed to fetch saved posts", err));
+      } else {
+        setSavedPosts([]);
+      }
+
       // Fetch pinned post
       api.get(`/posts/pinned/${fullDisplayUser._id}`)
         .then(res => { if (res.data) setPinnedPost(res.data); })
         .catch(err => console.error("Failed to fetch pinned post", err));
     }
-  }, [fullDisplayUser?._id]);
+  }, [fullDisplayUser?._id, isOwnProfile]);
 
   // GitHub repos
   useEffect(() => {
@@ -1011,7 +1074,7 @@ const Profile = () => {
               </div>
               
               <div className="flex flex-wrap gap-2 mb-2">
-                {['Posts', 'Articles', 'Events', 'Comments', 'Likes'].map(filter => (
+                {[...['Posts', 'Articles', 'Events', 'Comments', 'Likes'], ...(isOwnProfile ? ['Saved'] : [])].map(filter => (
                   <button 
                     key={filter}
                     onClick={() => setActivityFilter(filter)}
@@ -1047,6 +1110,12 @@ const Profile = () => {
                     codeSnippet={pinnedPost.codeSnippet}
                     codeLanguage={pinnedPost.codeLanguage}
                     codeTitle={pinnedPost.codeTitle}
+                    codeFileName={pinnedPost.codeFileName}
+                    codeDifficulty={pinnedPost.codeDifficulty}
+                    codeReadTime={pinnedPost.codeReadTime}
+                    hashtags={pinnedPost.hashtags}
+                    isSaved={Boolean(pinnedPost.isSaved) || savedPostIds.has(String(pinnedPost._id))}
+                    onSavedStateChange={handleSavedStateChange}
                     isPinnedDisplay={true}
                   />
                 </div>
@@ -1088,8 +1157,14 @@ const Profile = () => {
                           codeSnippet={post.codeSnippet}
                           codeLanguage={post.codeLanguage}
                           codeTitle={post.codeTitle}
+                          codeFileName={post.codeFileName}
+                          codeDifficulty={post.codeDifficulty}
+                          codeReadTime={post.codeReadTime}
+                          hashtags={post.hashtags}
+                          isSaved={Boolean(post.isSaved) || savedPostIds.has(String(post._id))}
                           isRepost={post.isRepost}
                           originalPost={post.originalPost}
+                          onSavedStateChange={handleSavedStateChange}
                           alreadyReposted={
                             (Boolean(post?.isRepost) && String(post?.userId?._id || post?.userId || '') === String(currentUser?._id || currentUser?.id || '')) ||
                             selfRepostedOriginalIds.has(String(post._id))
@@ -1120,9 +1195,25 @@ const Profile = () => {
                         }}
                         content={post.content}
                         image={post.image}
+                        video={post.video}
                         likesList={post.likes}
                         commentsList={post.comments}
                         time={post.createdAt}
+                        postType={post.postType}
+                        articleTitle={post.articleTitle}
+                        eventTitle={post.eventTitle}
+                        eventDate={post.eventDate}
+                        codeSnippet={post.codeSnippet}
+                        codeLanguage={post.codeLanguage}
+                        codeTitle={post.codeTitle}
+                        codeFileName={post.codeFileName}
+                        codeDifficulty={post.codeDifficulty}
+                        codeReadTime={post.codeReadTime}
+                        hashtags={post.hashtags}
+                        isSaved={Boolean(post.isSaved) || savedPostIds.has(String(post._id))}
+                        isRepost={post.isRepost}
+                        originalPost={post.originalPost}
+                        onSavedStateChange={handleSavedStateChange}
                       />
                     </div>
                   ))
@@ -1149,9 +1240,25 @@ const Profile = () => {
                         }}
                         content={post.content}
                         image={post.image}
+                        video={post.video}
                         likesList={post.likes}
                         commentsList={post.comments}
                         time={post.createdAt}
+                        postType={post.postType}
+                        articleTitle={post.articleTitle}
+                        eventTitle={post.eventTitle}
+                        eventDate={post.eventDate}
+                        codeSnippet={post.codeSnippet}
+                        codeLanguage={post.codeLanguage}
+                        codeTitle={post.codeTitle}
+                        codeFileName={post.codeFileName}
+                        codeDifficulty={post.codeDifficulty}
+                        codeReadTime={post.codeReadTime}
+                        hashtags={post.hashtags}
+                        isSaved={Boolean(post.isSaved) || savedPostIds.has(String(post._id))}
+                        isRepost={post.isRepost}
+                        originalPost={post.originalPost}
+                        onSavedStateChange={handleSavedStateChange}
                       />
                     </div>
                   ))
@@ -1184,6 +1291,19 @@ const Profile = () => {
                         time={post.createdAt}
                         postType={post.postType}
                         articleTitle={post.articleTitle}
+                        eventTitle={post.eventTitle}
+                        eventDate={post.eventDate}
+                        codeSnippet={post.codeSnippet}
+                        codeLanguage={post.codeLanguage}
+                        codeTitle={post.codeTitle}
+                        codeFileName={post.codeFileName}
+                        codeDifficulty={post.codeDifficulty}
+                        codeReadTime={post.codeReadTime}
+                        hashtags={post.hashtags}
+                        isSaved={Boolean(post.isSaved) || savedPostIds.has(String(post._id))}
+                        isRepost={post.isRepost}
+                        originalPost={post.originalPost}
+                        onSavedStateChange={handleSavedStateChange}
                       />
                     </div>
                   ))
@@ -1215,14 +1335,73 @@ const Profile = () => {
                         commentsList={post.comments}
                         time={post.createdAt}
                         postType={post.postType}
+                        articleTitle={post.articleTitle}
                         eventTitle={post.eventTitle}
                         eventDate={post.eventDate}
+                        codeSnippet={post.codeSnippet}
+                        codeLanguage={post.codeLanguage}
+                        codeTitle={post.codeTitle}
+                        codeFileName={post.codeFileName}
+                        codeDifficulty={post.codeDifficulty}
+                        codeReadTime={post.codeReadTime}
+                        hashtags={post.hashtags}
+                        isSaved={Boolean(post.isSaved) || savedPostIds.has(String(post._id))}
+                        isRepost={post.isRepost}
+                        originalPost={post.originalPost}
+                        onSavedStateChange={handleSavedStateChange}
                       />
                     </div>
                   ))
                 ) : (
                   <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center text-gray-500">
                     No events created yet.
+                  </div>
+                )
+              )}
+              {activityFilter === 'Saved' && isOwnProfile && (
+                savedPosts.length > 0 ? (
+                  savedPosts.map(post => (
+                    <div key={post._id} className="relative">
+                      <div className="flex items-center gap-2 px-4 py-2 text-xs text-gray-500 bg-gray-50/50 rounded-t-xl border-x border-t border-gray-100 italic">
+                        <Pin className="w-3 h-3" />
+                        <span>Saved for later</span>
+                      </div>
+                      <PostCard
+                        postId={post._id}
+                        user={{
+                          name: post.userId?.name || post.userId?.username,
+                          username: post.userId?.username,
+                          profilePic: post.userId?.profilePic
+                        }}
+                        content={post.content}
+                        image={post.image}
+                        video={post.video}
+                        likesList={post.likes}
+                        commentsList={post.comments}
+                        time={post.createdAt}
+                        isActivity={post.isActivity}
+                        activityType={post.activityType}
+                        postType={post.postType}
+                        articleTitle={post.articleTitle}
+                        eventTitle={post.eventTitle}
+                        eventDate={post.eventDate}
+                        codeSnippet={post.codeSnippet}
+                        codeLanguage={post.codeLanguage}
+                        codeTitle={post.codeTitle}
+                        codeFileName={post.codeFileName}
+                        codeDifficulty={post.codeDifficulty}
+                        codeReadTime={post.codeReadTime}
+                        hashtags={post.hashtags}
+                        isSaved={true}
+                        isRepost={post.isRepost}
+                        originalPost={post.originalPost}
+                        onSavedStateChange={handleSavedStateChange}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center text-gray-500">
+                    No saved posts yet.
                   </div>
                 )
               )}

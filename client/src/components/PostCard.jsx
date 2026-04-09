@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy, Check } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy, Check, Hash, FileCode, Gauge, Bookmark } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { createPortal } from 'react-dom';
 import api from '../services/api';
@@ -12,8 +12,11 @@ import { formatRelativeTime } from '../utils/timeUtils';
 import { resolveMediaUrl } from '../utils/mediaUrl';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { collectPostHashtags } from '../utils/hashtags';
 
-const PostCard = ({ postId, user, time, content, image, video, likesList = [], commentsList = [], isActivity = false, activityType = 'none', postType = 'post', articleTitle, eventTitle, eventDate, codeSnippet, codeLanguage, codeTitle, isPinnedDisplay = false, onPin, isRepost = false, originalPost = null, alreadyReposted = false, onRepostStateChange = null }) => {
+const CONTENT_HASHTAG_REGEX = /(^|\s)(#[a-z0-9_]{2,50})/gi;
+
+const PostCard = ({ postId, user, time, content, image, video, likesList = [], commentsList = [], isActivity = false, activityType = 'none', postType = 'post', articleTitle, eventTitle, eventDate, codeSnippet, codeLanguage, codeTitle, codeFileName, codeDifficulty, codeReadTime, hashtags = [], isSaved = false, isPinnedDisplay = false, onPin, isRepost = false, originalPost = null, alreadyReposted = false, onRepostStateChange = null, onSavedStateChange = null }) => {
   const { user: currentUser } = useContext(AuthContext);
   const { showToast } = useToast();
   const [showComments, setShowComments] = useState(false);
@@ -32,6 +35,8 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasReposted, setHasReposted] = useState(alreadyReposted);
   const [repostLoading, setRepostLoading] = useState(false);
+  const [saved, setSaved] = useState(Boolean(isSaved));
+  const [saveLoading, setSaveLoading] = useState(false);
   const [activeReplyCommentId, setActiveReplyCommentId] = useState('');
   const [replyDraftByComment, setReplyDraftByComment] = useState({});
   const [commentActionLoadingId, setCommentActionLoadingId] = useState('');
@@ -57,6 +62,10 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   React.useEffect(() => {
     setHasReposted(Boolean(alreadyReposted || isOwnRepostCard));
   }, [alreadyReposted, isOwnRepostCard]);
+
+  React.useEffect(() => {
+    setSaved(Boolean(isSaved));
+  }, [isSaved]);
 
   React.useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -331,12 +340,88 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const displayCodeSnippet = isRepost && originalPost ? originalPost.codeSnippet : codeSnippet;
   const displayCodeLanguage = isRepost && originalPost ? originalPost.codeLanguage : codeLanguage;
   const displayCodeTitle = isRepost && originalPost ? originalPost.codeTitle : codeTitle;
+  const displayCodeFileName = isRepost && originalPost ? originalPost.codeFileName : codeFileName;
+  const displayCodeDifficulty = isRepost && originalPost ? originalPost.codeDifficulty : codeDifficulty;
+  const displayCodeReadTime = isRepost && originalPost ? originalPost.codeReadTime : codeReadTime;
+  const displayHashtags = collectPostHashtags(
+    isRepost && originalPost
+      ? { ...originalPost, hashtags: originalPost?.hashtags || hashtags }
+      : { content, articleTitle, eventTitle, codeTitle, hashtags }
+  );
   const isEventCard = displayPostType === 'event';
   const isArticleCard = displayPostType === 'article';
   const isCodeCard = displayPostType === 'code';
   const isMediaCard = !isEventCard && !isArticleCard && !isCodeCard && Boolean(displayImage || displayVideo);
   const typeLabel = isEventCard ? 'Event' : isArticleCard ? 'Article' : isCodeCard ? 'Code' : isMediaCard ? 'Media' : '';
   const showPostFounderBadge = isFounderAccount(displayUser);
+  const difficultyTone = displayCodeDifficulty === 'Advanced'
+    ? 'bg-rose-500/15 text-rose-200 border-rose-400/30'
+    : displayCodeDifficulty === 'Beginner'
+    ? 'bg-emerald-500/15 text-emerald-200 border-emerald-400/30'
+    : 'bg-amber-500/15 text-amber-200 border-amber-400/30';
+
+  const renderContentWithHashtags = (text) => {
+    const source = String(text || '');
+    if (!source) return null;
+
+    const nodes = [];
+    let lastIndex = 0;
+    let match;
+
+    CONTENT_HASHTAG_REGEX.lastIndex = 0;
+
+    while ((match = CONTENT_HASHTAG_REGEX.exec(source)) !== null) {
+      const matchStart = match.index;
+      const whitespacePrefix = match[1] || '';
+      const hashtagText = match[2];
+      const hashtagStart = matchStart + whitespacePrefix.length;
+
+      if (matchStart > lastIndex) {
+        nodes.push(source.slice(lastIndex, matchStart));
+      }
+      if (whitespacePrefix) {
+        nodes.push(whitespacePrefix);
+      }
+
+      nodes.push(
+        <Link
+          key={`${hashtagText}-${hashtagStart}`}
+          to={`/?tag=${encodeURIComponent(hashtagText.slice(1).toLowerCase())}`}
+          className="font-semibold text-primary hover:underline"
+        >
+          {hashtagText}
+        </Link>
+      );
+
+      lastIndex = hashtagStart + hashtagText.length;
+    }
+
+    if (lastIndex < source.length) {
+      nodes.push(source.slice(lastIndex));
+    }
+
+    return nodes;
+  };
+
+  const handleToggleSave = async () => {
+    if (saveLoading) return;
+    setSaveLoading(true);
+    try {
+      const res = await api.put(`/users/me/saved-posts/${displayActionPostId}`);
+      const nextSaved = Boolean(res?.data?.isSaved);
+      setSaved(nextSaved);
+      if (onSavedStateChange) {
+        onSavedStateChange(String(res?.data?.postId || displayActionPostId), nextSaved);
+      }
+      showToast(nextSaved ? 'Post saved' : 'Removed from saved posts');
+      setIsMenuOpen(false);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update saved posts', 'error');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   return (
     <div
@@ -408,6 +493,16 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                 )}
                 {!isActivity && (
                   <button
+                    onClick={handleToggleSave}
+                    disabled={saveLoading}
+                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50 disabled:opacity-60"
+                  >
+                    <Bookmark className={`w-4 h-4 ${saved ? 'text-primary fill-primary' : 'text-gray-500'}`} />
+                    {saveLoading ? 'Updating...' : saved ? 'Remove from saved' : 'Save post'}
+                  </button>
+                )}
+                {!isActivity && (
+                  <button
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsShareModalOpen(true);
@@ -457,8 +552,23 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
       {displayPostType !== 'event' && displayPostType !== 'code' && (
         <div className={`px-4 pb-2 ${isArticleCard ? 'pb-4' : ''}`}>
           <p className={`text-gray-800 whitespace-pre-wrap ${isArticleCard ? 'line-clamp-4 text-[16px] leading-7 bg-slate-50 border border-slate-200 rounded-xl p-3.5' : 'text-[15px] leading-7'}`}>
-            {displayContent}
+            {renderContentWithHashtags(displayContent)}
           </p>
+        </div>
+      )}
+
+      {displayHashtags.length > 0 && (
+        <div className="px-4 pb-3 flex flex-wrap gap-2">
+          {displayHashtags.map((tag) => (
+            <Link
+              key={tag}
+              to={`/?tag=${encodeURIComponent(tag)}`}
+              className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-primary hover:border-blue-200 hover:bg-blue-100/70 transition-colors"
+            >
+              <Hash className="w-3 h-3" />
+              #{tag}
+            </Link>
+          ))}
         </div>
       )}
 
@@ -478,7 +588,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                 <Clock className="w-3.5 h-3.5" />
                 {new Date(displayEventDate).toLocaleDateString('en-US', { weekday: 'long', hour: '2-digit', minute: '2-digit' })}
               </p>
-              <p className="text-sm text-gray-600 line-clamp-2">{displayContent}</p>
+              <p className="text-sm text-gray-600 line-clamp-2">{renderContentWithHashtags(displayContent)}</p>
               <button onClick={() => showToast('Registered for event!')} className="mt-4 bg-primary text-white font-bold text-sm px-5 py-2 rounded-full hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95 transition-all w-max inline-flex items-center gap-2">
                 Join Event
               </button>
@@ -505,6 +615,26 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                 <div className="text-[12px] sm:text-[13px] font-medium tracking-wide flex items-start gap-1.5 leading-snug" style={{ color: '#a0a0a0' }}>
                   <Code2 className="w-3.5 h-3.5 flex-shrink-0 mt-[2px]" style={{ color: '#888' }} />
                   <span style={{ wordBreak: 'break-word' }}>{displayCodeTitle || 'Untitled'}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] sm:text-[11px]">
+                  {displayCodeFileName && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1" style={{ color: '#d3d8e2' }}>
+                      <FileCode className="w-3 h-3" />
+                      {displayCodeFileName}
+                    </span>
+                  )}
+                  {displayCodeDifficulty && (
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${difficultyTone}`}>
+                      <Gauge className="w-3 h-3" />
+                      {displayCodeDifficulty}
+                    </span>
+                  )}
+                  {Number(displayCodeReadTime) > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-500/10 px-2.5 py-1 text-sky-100">
+                      <Clock className="w-3 h-3" />
+                      {displayCodeReadTime} min read
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -564,7 +694,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
           {/* Optional description footer */}
           {displayContent && displayContent !== `💻 Code: ${displayCodeTitle}` && (
             <div className="px-4 py-3" style={{ background: '#21252b', borderTop: '1px solid #2a2a2a' }}>
-              <p className="text-[13px] leading-relaxed" style={{ color: '#9da5b4' }}>{displayContent}</p>
+              <p className="text-[13px] leading-relaxed" style={{ color: '#9da5b4' }}>{renderContentWithHashtags(displayContent)}</p>
             </div>
           )}
         </div>
