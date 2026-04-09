@@ -61,6 +61,7 @@ app.use('/api/posts', require('./routes/postRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Basic Route
 app.get('/', (req, res) => {

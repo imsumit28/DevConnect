@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy, Check } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy, Check, Brain, Bug, Zap, X, Loader2 } from 'lucide-react';
+import AiResponseRenderer from './AiResponseRenderer';
 import EmojiPicker from 'emoji-picker-react';
 import { createPortal } from 'react-dom';
 import api from '../services/api';
@@ -36,6 +37,10 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const [replyDraftByComment, setReplyDraftByComment] = useState({});
   const [commentActionLoadingId, setCommentActionLoadingId] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
+  const [aiAction, setAiAction] = useState('');
+  const [aiResult, setAiResult] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const displayActionPostId = isRepost && originalPost?._id ? originalPost._id : postId;
   const displayLikesList = isRepost && Array.isArray(originalPost?.likes) ? originalPost.likes : likesList;
   const displayCommentsList = isRepost && Array.isArray(originalPost?.comments) ? originalPost.comments : commentsList;
@@ -308,6 +313,34 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
     setTimeout(() => setCodeCopied(false), 2000);
   };
 
+  const handleAiAnalyze = async (action) => {
+    if (aiLoading) return;
+    // Toggle off if same action clicked again
+    if (aiAction === action && aiPanelOpen) {
+      setAiPanelOpen(false);
+      setAiAction('');
+      return;
+    }
+    setAiAction(action);
+    setAiResult('');
+    setAiLoading(true);
+    setAiPanelOpen(true);
+    try {
+      const res = await api.post('/ai/analyze', {
+        code: displayCodeSnippet,
+        language: displayCodeLanguage || 'unknown',
+        action,
+      });
+      setAiResult(res.data.result);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'AI analysis failed. Please try again.';
+      setAiResult(`**Error:** ${msg}`);
+      showToast(msg, 'error');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   React.useEffect(() => {
     const handleGlobalClick = (e) => {
       if (isMenuOpen && !e.target.closest('.post-menu-container')) {
@@ -565,6 +598,95 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
           {displayContent && displayContent !== `💻 Code: ${displayCodeTitle}` && (
             <div className="px-4 py-3" style={{ background: '#21252b', borderTop: '1px solid #2a2a2a' }}>
               <p className="text-[13px] leading-relaxed" style={{ color: '#9da5b4' }}>{displayContent}</p>
+            </div>
+          )}
+
+          {/* ── AI Analysis Toolbar ── */}
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 flex-wrap" style={{ background: 'linear-gradient(180deg, #1e2127 0%, #21252b 100%)', borderTop: '1px solid #2a2a2a' }}>
+            <div className="flex items-center gap-1 mr-auto">
+              <Brain className="w-3.5 h-3.5" style={{ color: '#c084fc' }} />
+              <span className="text-[11px] font-semibold tracking-wide" style={{ color: '#7c7f86' }}>AI</span>
+            </div>
+            <button
+              onClick={() => handleAiAnalyze('explain')}
+              disabled={aiLoading}
+              className={`ai-action-btn ${
+                aiAction === 'explain' && aiPanelOpen
+                  ? 'ai-action-btn-active-explain'
+                  : ''
+              }`}
+            >
+              <Brain className="w-3.5 h-3.5" />
+              <span>Explain</span>
+            </button>
+            <button
+              onClick={() => handleAiAnalyze('fix')}
+              disabled={aiLoading}
+              className={`ai-action-btn ${
+                aiAction === 'fix' && aiPanelOpen
+                  ? 'ai-action-btn-active-fix'
+                  : ''
+              }`}
+            >
+              <Bug className="w-3.5 h-3.5" />
+              <span>Fix Bugs</span>
+            </button>
+            <button
+              onClick={() => handleAiAnalyze('optimize')}
+              disabled={aiLoading}
+              className={`ai-action-btn ${
+                aiAction === 'optimize' && aiPanelOpen
+                  ? 'ai-action-btn-active-optimize'
+                  : ''
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Optimize</span>
+            </button>
+          </div>
+
+          {/* ── AI Response Panel ── */}
+          {aiPanelOpen && (
+            <div className="ai-response-panel" style={{ borderTop: '1px solid #2a2a2a' }}>
+              <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    aiLoading ? 'bg-purple-400 animate-pulse' : 'bg-green-400'
+                  }`} />
+                  <span className="text-[12px] font-semibold" style={{ color: '#c084fc' }}>
+                    {aiLoading
+                      ? `Analyzing with AI...`
+                      : aiAction === 'explain'
+                      ? '✨ Code Explanation'
+                      : aiAction === 'fix'
+                      ? '🐛 Bug Analysis'
+                      : '⚡ Optimization Suggestions'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => { setAiPanelOpen(false); setAiAction(''); }}
+                  className="p-1 rounded-md transition-colors"
+                  style={{ color: '#666', background: 'transparent' }}
+                  onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.08)'; e.target.style.color = '#aaa'; }}
+                  onMouseLeave={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#666'; }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="px-4 py-4 overflow-auto" style={{ maxHeight: '28rem', scrollbarWidth: 'thin', scrollbarColor: '#444 transparent' }}>
+                {aiLoading ? (
+                  <div className="ai-loading-skeleton">
+                    <div className="ai-skeleton-line w-3/4"></div>
+                    <div className="ai-skeleton-line w-full"></div>
+                    <div className="ai-skeleton-line w-5/6"></div>
+                    <div className="ai-skeleton-line w-2/3"></div>
+                    <div className="ai-skeleton-line w-full"></div>
+                    <div className="ai-skeleton-line w-4/5"></div>
+                  </div>
+                ) : (
+                  <AiResponseRenderer content={aiResult} />
+                )}
+              </div>
             </div>
           )}
         </div>
