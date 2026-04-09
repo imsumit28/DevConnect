@@ -491,30 +491,35 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
       {displayPostType === 'code' && displayCodeSnippet && (
         <div className="mx-4 mb-3 mt-0 rounded-xl overflow-hidden shadow-lg group/card transition-all duration-300 hover:shadow-2xl hover:shadow-black/10" style={{ border: '1px solid #383838' }}>
           {/* macOS-style title bar */}
-          <div className="flex items-center px-4 py-2.5 select-none" style={{ background: 'linear-gradient(180deg, #3c3c3c 0%, #333 100%)', borderBottom: '1px solid #2a2a2a' }}>
-            <div className="flex gap-2 items-center flex-shrink-0">
-              <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #ff6d5f, #ff5f56)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
-              <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #ffc44d, #ffbd2e)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
-              <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #4dd964, #27c93f)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3 px-3 sm:px-4 py-3 select-none" style={{ background: 'linear-gradient(180deg, #3c3c3c 0%, #333 100%)', borderBottom: '1px solid #2a2a2a' }}>
+            
+            {/* Left side: Mac buttons & Title */}
+            <div className="flex items-start gap-3 flex-1 min-w-[200px]">
+              <div className="flex gap-2 items-center flex-shrink-0 pt-1">
+                <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #ff6d5f, #ff5f56)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
+                <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #ffc44d, #ffbd2e)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
+                <span className="w-[13px] h-[13px] rounded-full inline-block" style={{ background: 'radial-gradient(circle at 35% 35%, #4dd964, #27c93f)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2)' }}></span>
+              </div>
+
+              <div className="flex-1 pointer-events-none">
+                <div className="text-[12px] sm:text-[13px] font-medium tracking-wide flex items-start gap-1.5 leading-snug" style={{ color: '#a0a0a0' }}>
+                  <Code2 className="w-3.5 h-3.5 flex-shrink-0 mt-[2px]" style={{ color: '#888' }} />
+                  <span style={{ wordBreak: 'break-word' }}>{displayCodeTitle || 'Untitled'}</span>
+                </div>
+              </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-center min-w-0 px-2 sm:px-3 pointer-events-none">
-              <span className="text-[12px] sm:text-[13px] font-medium tracking-wide flex items-center gap-1.5 truncate max-w-full" style={{ color: '#a0a0a0' }}>
-                <Code2 className="w-3.5 h-3.5 flex-shrink-0 hidden min-[380px]:block" style={{ color: '#888' }} />
-                <span className="truncate">{displayCodeTitle || 'Untitled'}</span>
-              </span>
-            </div>
-
-            <div className="ml-auto flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Right side: Language and Copy (Wraps to new line if constrained) */}
+            <div className="flex items-center justify-end gap-2 flex-shrink-0 ml-auto w-full sm:w-auto">
               {displayCodeLanguage && (
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest px-2 sm:px-2.5 py-0.5 rounded-md truncate max-w-[60px] sm:max-w-none" style={{ color: '#61dafb', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.15)' }}>
+                <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-md truncate max-w-[120px]" style={{ color: '#61dafb', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.15)' }}>
                   {displayCodeLanguage}
                 </span>
               )}
-              {/* Copy button — simplified on mobile */}
+              {/* Copy button */}
               <button
                 onClick={() => handleCopyCode(displayCodeSnippet)}
-                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-all duration-200 active:scale-90"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-md transition-all duration-200 active:scale-90"
                 style={{
                   background: codeCopied ? 'rgba(39,201,63,0.18)' : 'rgba(255,255,255,0.08)',
                   border: codeCopied ? '1px solid rgba(39,201,63,0.35)' : '1px solid rgba(255,255,255,0.12)',
@@ -523,7 +528,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                 title="Copy code"
               >
                 {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline text-[11px] font-medium">{codeCopied ? 'Copied!' : 'Copy'}</span>
+                <span className="text-[11px] font-medium">{codeCopied ? 'Copied!' : 'Copy'}</span>
               </button>
             </div>
           </div>
