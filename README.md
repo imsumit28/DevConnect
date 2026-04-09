@@ -25,6 +25,7 @@ DevConnect is a modern developer social network inspired by LinkedIn, built for 
 - Search users by username
 - Trending topic filters for feed exploration
 - Responsive, modern UI with polished micro-interactions
+- AI Code Analysis (Explain, Fix, Optimize) powered by Google Gemini 2.0
 - Used Cloudinary for image storage
 
 ## Screenshots
@@ -94,6 +95,7 @@ JWT_SECRET=your_jwt_secret
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+GEMINI_API_KEY=your_gemini_api_key
 CLIENT_URL=http://localhost:5173
 ```
 
