@@ -16,16 +16,17 @@ DevConnect is a modern developer social network inspired by LinkedIn, built for 
 ## Features
 
 - JWT auth with secure login/register flow
-- Rich post system (text, image, video, event, article)
+- Rich post system: Create posts with text, images, video, events, articles, and syntax-highlighted code snippets
 - Real-time likes, comments, reposts, and notifications (Socket.io)
-- Follow/unfollow with live social updates
-- Profile system with cover/profile image upload and crop editor
-- Pinned posts and profile activity tabs
+- Professional networking system with LinkedIn-style follow requests
+- Dedicated Connections modal to manage followers, following, and pending requests
+- Privacy-first networking: Must be connected to a user to view their connections
+- Profile system with interactive avatar/cover image cropper and upload to Cloudinary
+- Pinned posts and robust profile activity tabs
 - Direct messaging with real-time delivery
 - Search users by username
 - Trending topic filters for feed exploration
-- Responsive, modern UI with polished micro-interactions
-- Used Cloudinary for image storage
+- Responsive, modern UI with dynamic interaction states and polished animations
 
 ## Screenshots
 

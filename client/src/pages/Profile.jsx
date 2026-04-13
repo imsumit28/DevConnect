@@ -1028,7 +1028,7 @@ const Profile = () => {
                           setConnectionsTab('requests');
                           setIsConnectionsModalOpen(true);
                         }}
-                        className="flex items-center gap-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-full cursor-pointer shadow-sm animate-pulse transition-colors"
+                        className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2.5 py-1 rounded-full cursor-pointer transition-colors"
                       >
                         {fullDisplayUser.followRequests.length} pending request{fullDisplayUser.followRequests.length !== 1 && 's'}
                       </div>
