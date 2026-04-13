@@ -11,6 +11,7 @@ import { io } from 'socket.io-client';
 import { socketUrl } from '../utils/runtimeConfig';
 import { resolveMediaUrl } from '../utils/mediaUrl';
 import { compressImageFile } from '../utils/imageCompression';
+import ConnectionsModal from '../components/ConnectionsModal';
 
 const Profile = () => {
   const { user: currentUser, updateUser } = useContext(AuthContext); 
@@ -21,6 +22,10 @@ const Profile = () => {
   const [githubRepos, setGithubRepos] = useState([]);
   const fileInputRef = useRef(null);
   const coverInputRef = useRef(null);
+  
+  // Connections Modal state
+  const [isConnectionsModalOpen, setIsConnectionsModalOpen] = useState(false);
+  const [connectionsTab, setConnectionsTab] = useState('followers');
   
   // Edit Profile Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -699,32 +704,116 @@ const Profile = () => {
       await api.put(`/users/${fullDisplayUser._id}/follow`);
       setProfileUser(prev => ({
         ...prev,
-        followers: [...(prev.followers || []), currentUser._id]
+        followRequests: [...(prev.followRequests || []), currentUser._id]
       }));
-      showToast(`You are now following ${fullDisplayUser.username}`);
+      showToast(`Follow request sent to ${fullDisplayUser.username}`);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to send follow request', 'error');
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    try {
+      await api.put(`/users/${fullDisplayUser._id}/cancel-follow-request`);
+      setProfileUser(prev => ({
+        ...prev,
+        followRequests: (prev.followRequests || []).filter(id => {
+          const fId = typeof id === 'string' ? id : id._id;
+          return fId !== currentUser._id;
+        })
+      }));
+      showToast(`Follow request cancelled`);
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleUnfollow = async () => {
+  const handleAcceptRequest = async (senderId) => {
     try {
-      await api.put(`/users/${fullDisplayUser._id}/unfollow`);
-      setProfileUser(prev => ({
-        ...prev,
-        followers: (prev.followers || []).filter(id => {
-          const fId = typeof id === 'string' ? id : id._id;
-          return fId !== currentUser._id;
-        })
-      }));
-      showToast(`Unfollowed ${fullDisplayUser.username}`);
+      await api.put(`/users/${senderId}/accept-follow`);
+      if (isOwnProfile) {
+        // Update local state for current user
+        const updatedRequests = (fullDisplayUser.followRequests || []).filter(user => user._id !== senderId);
+        const newFollower = fullDisplayUser.followRequests.find(u => u._id === senderId);
+        const updatedFollowers = [...(fullDisplayUser.followers || []), ...(newFollower ? [newFollower] : [])];
+        setProfileUser(prev => ({
+          ...prev,
+          followRequests: updatedRequests,
+          followers: updatedFollowers
+        }));
+        updateUser({ followRequests: updatedRequests, followers: updatedFollowers });
+      } else {
+        // If we accepted while on the other user's profile, fetch fresh data
+        const res = await api.get('/users/me/profile');
+        updateUser(res.data);
+      }
+      showToast(`Follow request accepted`);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to accept request', 'error');
+    }
+  };
+
+  const handleRejectRequest = async (senderId) => {
+    try {
+      await api.put(`/users/${senderId}/reject-follow`);
+      if (isOwnProfile) {
+        const updatedRequests = (fullDisplayUser.followRequests || []).filter(user => user._id !== senderId);
+        setProfileUser(prev => ({
+          ...prev,
+          followRequests: updatedRequests
+        }));
+        updateUser({ followRequests: updatedRequests });
+      } else {
+        const res = await api.get('/users/me/profile');
+        updateUser(res.data);
+      }
+      showToast(`Follow request rejected`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUnfollow = async (userIdToUnfollow = fullDisplayUser._id) => {
+    try {
+      await api.put(`/users/${userIdToUnfollow}/unfollow`);
+      // If we are viewing someone else and unfollow them
+      if (userIdToUnfollow === fullDisplayUser._id) {
+        setProfileUser(prev => ({
+          ...prev,
+          followers: (prev.followers || []).filter(id => {
+            const fId = typeof id === 'string' ? id : id._id;
+            return fId !== currentUser._id;
+          })
+        }));
+        showToast(`Unfollowed ${fullDisplayUser.username}`);
+      } else {
+        // If we are viewing OUR profile and unfollowed someone in our following list
+        setProfileUser(prev => ({
+          ...prev,
+          following: (prev.following || []).filter(id => {
+            const fId = typeof id === 'string' ? id : id._id;
+            return fId !== userIdToUnfollow;
+          })
+        }));
+        showToast(`Unfollowed`);
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
   const isFollowing = profileUser?.followers?.some(f => 
-    (typeof f === 'string' ? f : f._id) === currentUser?._id
+    String(typeof f === 'string' ? f : f._id) === String(currentUser?._id)
+  );
+
+  const hasRequested = profileUser?.followRequests?.some(f => 
+    String(typeof f === 'string' ? f : f._id) === String(currentUser?._id)
+  );
+
+  const hasReceivedRequest = currentUser?.followRequests?.some(f => 
+    String(typeof f === 'string' ? f : f._id) === String(fullDisplayUser?._id)
   );
 
   const isSuggestedUserFollowing = (userId) =>
@@ -919,8 +1008,31 @@ const Profile = () => {
                 )}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3">
                   <span className="text-sm text-primary font-semibold hover:underline cursor-pointer">Contact info</span>
-                  <div className="flex items-center gap-1 text-sm text-primary font-semibold hover:underline cursor-pointer">
-                    <Users className="w-4 h-4" /> {followersCount.toLocaleString()} followers • {followingCount.toLocaleString()} following
+                  <div className="flex items-center gap-3">
+                    <div 
+                      onClick={() => {
+                        if (!isOwnProfile && !isFollowing) {
+                          showToast('You must follow this user to view their connections.', 'error');
+                          return;
+                        }
+                        setConnectionsTab('followers');
+                        setIsConnectionsModalOpen(true);
+                      }}
+                      className="flex items-center gap-1 text-sm text-primary font-semibold hover:underline cursor-pointer"
+                    >
+                      <Users className="w-4 h-4" /> {followersCount.toLocaleString()} followers • {followingCount.toLocaleString()} following
+                    </div>
+                    {isOwnProfile && fullDisplayUser?.followRequests && fullDisplayUser.followRequests.length > 0 && (
+                      <div 
+                        onClick={() => {
+                          setConnectionsTab('requests');
+                          setIsConnectionsModalOpen(true);
+                        }}
+                        className="flex items-center gap-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-full cursor-pointer shadow-sm animate-pulse transition-colors"
+                      >
+                        {fullDisplayUser.followRequests.length} pending request{fullDisplayUser.followRequests.length !== 1 && 's'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -936,12 +1048,28 @@ const Profile = () => {
                   </button>
                 ) : (
                   <>
+                    {/* Follow state machine */}
                     {isFollowing ? (
                       <button 
-                        onClick={handleUnfollow}
+                        onClick={() => handleUnfollow(fullDisplayUser._id)}
                         className="border-2 border-primary text-primary font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-blue-50 transition-all w-full sm:w-auto"
                       >
                         Following
+                      </button>
+                    ) : hasRequested ? (
+                      <button 
+                        onClick={handleCancelRequest}
+                        className="border-2 border-gray-400 text-gray-600 font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-gray-100 transition-all w-full sm:w-auto"
+                      >
+                        Requested
+                      </button>
+                    ) : hasReceivedRequest ? (
+                      <button 
+                        onClick={() => handleAcceptRequest(fullDisplayUser._id)}
+                        className="bg-green-600 text-white font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-green-700 shadow-lg active:scale-95 transition-all w-full sm:w-auto"
+                      >
+                        <CheckCircle2 className="w-5 h-5 -ml-1" />
+                        Accept Follow
                       </button>
                     ) : (
                       <button 
@@ -1916,6 +2044,21 @@ const Profile = () => {
           </div>
         </>
       )}
+
+      {/* Connections Modal */}
+      <ConnectionsModal
+        isOpen={isConnectionsModalOpen}
+        onClose={() => setIsConnectionsModalOpen(false)}
+        initialTab={connectionsTab}
+        followers={fullDisplayUser?.followers || []}
+        following={fullDisplayUser?.following || []}
+        requests={fullDisplayUser?.followRequests || []}
+        isOwnProfile={isOwnProfile}
+        onAcceptRequest={handleAcceptRequest}
+        onRejectRequest={handleRejectRequest}
+        onUnfollow={handleUnfollow}
+      />
+
     </div>
   );
 };

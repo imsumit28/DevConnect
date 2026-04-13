@@ -52,7 +52,8 @@ exports.getUserProfile = async (req, res) => {
     const user = await User.findOne({ username: req.params.username })
       .select('-password')
       .populate('followers', 'username name profilePic email')
-      .populate('following', 'username name profilePic email');
+      .populate('following', 'username name profilePic email')
+      .populate('followRequests', 'username name profilePic email');
 
     if (user) {
       res.json(user);
@@ -97,6 +98,7 @@ exports.getMyProfile = async (req, res) => {
       .select('-password')
       .populate('followers', 'username name profilePic email')
       .populate('following', 'username name profilePic email')
+      .populate('followRequests', 'username name profilePic email')
       .populate('savedPosts', '_id');
 
     if (user) {
@@ -296,7 +298,7 @@ exports.getUserActivity = async (req, res) => {
   }
 };
 
-// @desc    Follow a user
+// @desc    Send a follow request to a user
 // @route   PUT /api/users/:id/follow
 // @access  Private
 exports.followUser = async (req, res) => {
@@ -312,37 +314,115 @@ exports.followUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (!userToFollow.followers.includes(req.user)) {
-      await userToFollow.updateOne({ $push: { followers: req.user } });
-      await currentUser.updateOne({ $push: { following: req.params.id } });
-      
-      // Log Activity in Feed
-      await Post.create({
-        userId: req.user,
-        content: `followed ${userToFollow.username}`,
-        isActivity: true,
-        activityType: 'follow'
-      });
+    if (userToFollow.followers.includes(req.user)) {
+      return res.status(403).json({ message: 'You already follow this user' });
+    }
 
-      // Create Notification
-      const notif = await Notification.create({
-        receiver: req.params.id,
-        sender: req.user,
-        type: 'follow'
-      });
+    if (userToFollow.followRequests.includes(req.user)) {
+      return res.status(403).json({ message: 'Follow request already sent' });
+    }
 
-      // Emit Socket Event
-      const io = req.app.get('io');
+    await userToFollow.updateOne({ $push: { followRequests: req.user } });
+    
+    // Create Notification about the request
+    const notif = await Notification.create({
+      receiver: req.params.id,
+      sender: req.user,
+      type: 'follow_request'
+    });
+
+    // Emit Socket Event
+    const io = req.app.get('io');
+    if (io) {
       io.to(req.params.id).emit('new_notification', {
         _id: notif._id,
-        type: 'follow',
+        type: 'follow_request',
         senderName: currentUser.username
       });
-
-      res.status(200).json({ message: 'User has been followed' });
-    } else {
-      res.status(403).json({ message: 'You already follow this user' });
     }
+
+    res.status(200).json({ message: 'Follow request has been sent' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Accept a follow request
+// @route   PUT /api/users/:id/accept-follow
+// @access  Private
+exports.acceptFollowRequest = async (req, res) => {
+  try {
+    const senderId = req.params.id; // User who sent the request
+    const currentUserId = req.user;
+
+    const currentUser = await User.findById(currentUserId);
+    const sender = await User.findById(senderId);
+
+    if (!currentUser || !sender) return res.status(404).json({ message: 'User not found' });
+
+    if (!currentUser.followRequests.includes(senderId)) {
+      return res.status(400).json({ message: 'No follow request from this user' });
+    }
+
+    await currentUser.updateOne({ 
+      $pull: { followRequests: senderId },
+      $push: { followers: senderId }
+    });
+    await sender.updateOne({ $push: { following: currentUserId } });
+
+    // Log Activity in Feed
+    await Post.create({
+      userId: senderId,
+      content: `connected with ${currentUser.username}`,
+      isActivity: true,
+      activityType: 'follow'
+    });
+
+    res.status(200).json({ message: 'Follow request accepted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Reject a follow request
+// @route   PUT /api/users/:id/reject-follow
+// @access  Private
+exports.rejectFollowRequest = async (req, res) => {
+  try {
+    const senderId = req.params.id;
+    const currentUserId = req.user;
+
+    const currentUser = await User.findById(currentUserId);
+
+    if (!currentUser) return res.status(404).json({ message: 'User not found' });
+
+    if (!currentUser.followRequests.includes(senderId)) {
+      return res.status(400).json({ message: 'No follow request from this user' });
+    }
+
+    await currentUser.updateOne({ $pull: { followRequests: senderId } });
+    res.status(200).json({ message: 'Follow request rejected' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Withdraw a sent follow request
+// @route   PUT /api/users/:id/cancel-follow-request
+// @access  Private
+exports.cancelFollowRequest = async (req, res) => {
+  try {
+    const targetUserId = req.params.id;
+    const targetUser = await User.findById(targetUserId);
+
+    if (!targetUser) return res.status(404).json({ message: 'User not found' });
+
+    if (!targetUser.followRequests.includes(req.user)) {
+      return res.status(400).json({ message: 'You have not sent a request to this user' });
+    }
+
+    await targetUser.updateOne({ $pull: { followRequests: req.user } });
+    res.status(200).json({ message: 'Follow request withdrawn' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

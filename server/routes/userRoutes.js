@@ -13,7 +13,10 @@ const {
   checkUsernameAvailability,
   addUserProject,
   getSavedPosts,
-  toggleSavedPost
+  toggleSavedPost,
+  acceptFollowRequest,
+  rejectFollowRequest,
+  cancelFollowRequest
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 
@@ -29,6 +32,9 @@ router.get('/:userId/activity', getUserActivity);
 router.put('/profile', protect, updateUserProfile);
 router.post('/projects', protect, addUserProject);
 router.put('/:id/follow', protect, followUser);
+router.put('/:id/accept-follow', protect, acceptFollowRequest);
+router.put('/:id/reject-follow', protect, rejectFollowRequest);
+router.put('/:id/cancel-follow-request', protect, cancelFollowRequest);
 router.put('/:id/unfollow', protect, unfollowUser);
 
 module.exports = router;
