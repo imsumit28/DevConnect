@@ -241,28 +241,32 @@ const Home = () => {
         <div className="order-1 lg:order-2 col-span-1 lg:col-span-6 flex flex-col gap-4">
           {welcomeVariant && (
             <div
-              className={`relative overflow-hidden rounded-2xl border border-white/70 shadow-[0_22px_50px_-30px_rgba(11,107,203,0.55)] px-4 py-3 text-white ${isWelcomeClosing ? 'dc-welcome-pop-exit' : 'dc-welcome-pop-enter'}`}
-              style={{ background: 'linear-gradient(125deg, #0b6bcb 0%, #1a8ac7 48%, #15a08f 100%)' }}
+              className={`flex items-center justify-between bg-white border border-gray-200 shadow-sm rounded-xl px-4 py-3 ${isWelcomeClosing ? 'dc-welcome-pop-exit' : 'dc-welcome-pop-enter'}`}
               role="status"
               aria-live="polite"
             >
-              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/20 blur-2xl" />
-              <div className="pointer-events-none absolute -left-6 -bottom-8 h-20 w-20 rounded-full bg-white/15 blur-xl" />
-              <div className="relative flex items-start justify-between gap-4">
-                <p className="text-sm sm:text-base font-semibold leading-snug pr-2">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-primary">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-gray-800">
                   {welcomeVariant === 'login'
                     ? 'Welcome back'
                     : 'Welcome to DevConnect - The Developer Network'}
                 </p>
-                <button
-                  type="button"
-                  onClick={closeWelcome}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 bg-white/15 text-white/95 hover:bg-white/25 transition-colors"
-                  aria-label="Close welcome message"
-                >
-                  ×
-                </button>
               </div>
+              <button
+                type="button"
+                onClick={closeWelcome}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full w-7 h-7 flex items-center justify-center transition-colors"
+                aria-label="Close welcome message"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
 
