@@ -1018,7 +1018,7 @@ const Profile = () => {
                         setConnectionsTab('followers');
                         setIsConnectionsModalOpen(true);
                       }}
-                      className="flex items-center gap-1 text-sm text-primary font-semibold hover:underline cursor-pointer"
+                      className="flex items-center gap-1 text-sm text-gray-600 font-semibold hover:text-primary hover:underline cursor-pointer transition-colors"
                     >
                       <Users className="w-4 h-4" /> {followersCount.toLocaleString()} followers • {followingCount.toLocaleString()} following
                     </div>
