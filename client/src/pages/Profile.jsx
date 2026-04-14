@@ -1052,21 +1052,21 @@ const Profile = () => {
                     {isFollowing ? (
                       <button 
                         onClick={() => handleUnfollow(fullDisplayUser._id)}
-                        className="border-2 border-primary text-primary font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-blue-50 transition-all w-full sm:w-auto"
+                        className="border-2 border-primary text-primary font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-blue-50 active:scale-95 transition-all w-full sm:w-auto sm:min-w-[140px]"
                       >
                         Following
                       </button>
                     ) : hasRequested ? (
                       <button 
                         onClick={handleCancelRequest}
-                        className="border-2 border-gray-400 text-gray-600 font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-gray-100 transition-all w-full sm:w-auto"
+                        className="border-2 border-gray-400 text-gray-600 font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all w-full sm:w-auto sm:min-w-[140px]"
                       >
                         Requested
                       </button>
                     ) : hasReceivedRequest ? (
                       <button 
                         onClick={() => handleAcceptRequest(fullDisplayUser._id)}
-                        className="bg-green-600 text-white font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-green-700 shadow-lg active:scale-95 transition-all w-full sm:w-auto"
+                        className="bg-green-600 text-white font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-green-700 shadow-lg active:scale-95 transition-all w-full sm:w-auto sm:min-w-[140px]"
                       >
                         <CheckCircle2 className="w-5 h-5 -ml-1" />
                         Accept Follow
@@ -1074,7 +1074,7 @@ const Profile = () => {
                     ) : (
                       <button 
                         onClick={handleFollow}
-                        className="bg-primary text-white font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-blue-700 hover:shadow-lg active:scale-95 transition-all w-full sm:w-auto"
+                        className="bg-primary text-white font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-blue-700 hover:shadow-lg active:scale-95 transition-all w-full sm:w-auto sm:min-w-[140px]"
                       >
                         <Plus className="w-5 h-5 -ml-1" />
                         Follow
@@ -1082,7 +1082,7 @@ const Profile = () => {
                     )}
                     <button 
                       onClick={toggleChat}
-                      className="border-2 border-primary text-primary font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-blue-50 active:scale-95 transition-all w-full sm:w-auto"
+                      className="border-2 border-primary text-primary font-semibold flex items-center justify-center gap-2 px-6 py-2.5 rounded-full hover:bg-blue-50 active:scale-95 transition-all w-full sm:w-auto sm:min-w-[140px]"
                     >
                       <Send className="w-4 h-4" />
                       Message
