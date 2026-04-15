@@ -95,7 +95,18 @@ const PostInput = ({ onPostCreated }) => {
     requestAnimationFrame(() => {
       input.focus();
       input.setSelectionRange(nextCursor, nextCursor);
+      input.style.height = 'auto';
+      input.style.height = `${Math.min(input.scrollHeight, 300)}px`;
     });
+  };
+
+  const handleContentChange = (e) => {
+    setContent(e.target.value);
+    const el = postInputRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 300)}px`;
+    }
   };
 
   useEffect(() => {
@@ -175,6 +186,9 @@ const PostInput = ({ onPostCreated }) => {
 
       const res = await api.post('/posts', { content, image: imageUrl, video: videoUrl });
       setContent('');
+      if (postInputRef.current) {
+        postInputRef.current.style.height = 'auto';
+      }
       setHashtagSuggestions([]);
       setShowHashtagSuggestions(false);
       setImage(null);
@@ -315,17 +329,17 @@ const PostInput = ({ onPostCreated }) => {
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-4">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 sm:gap-3">
+        <form onSubmit={handleSubmit} className="flex items-start gap-2 sm:gap-3">
           <img 
             src={user?.profilePic || `https://i.pravatar.cc/150?u=${user?.username || 'me'}`} 
             alt="Profile" 
             className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm border border-gray-100 shrink-0"
           />
-          <input 
+          <textarea 
             ref={postInputRef}
-            type="text"
+            rows={1}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={handleContentChange}
             onFocus={() => {
               if (hashtagSuggestions.length > 0) setShowHashtagSuggestions(true);
             }}
@@ -334,12 +348,12 @@ const PostInput = ({ onPostCreated }) => {
             }}
             onKeyDown={handleContentKeyDown}
             placeholder="Start a post..."
-            className="flex-1 min-w-0 bg-gray-100 hover:bg-gray-200 border border-transparent focus:border-gray-300 focus:bg-white rounded-full px-3 sm:px-5 py-2.5 sm:py-3 text-gray-700 outline-none transition-all text-sm sm:text-base"
+            className={`flex-1 min-w-0 bg-gray-100 hover:bg-gray-200 border border-transparent focus:border-gray-300 focus:bg-white px-3 sm:px-5 py-2.5 sm:py-3 text-gray-700 outline-none transition-all text-sm sm:text-base resize-none overflow-y-auto leading-relaxed [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${content.length > 0 || (postInputRef.current && postInputRef.current.scrollHeight > 60) ? 'rounded-2xl min-h-[50px]' : 'rounded-full h-10 sm:h-12'}`}
           />
           <button 
             type="submit" 
             disabled={(!content.trim() && !image && !video) || loading}
-            className="bg-primary text-white font-semibold px-3 sm:px-4 py-2 rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors active:scale-95 shrink-0 whitespace-nowrap text-sm sm:text-base"
+            className="bg-primary text-white font-semibold px-3 sm:px-4 py-2 rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors active:scale-95 shrink-0 whitespace-nowrap text-sm sm:text-base mt-0.5 sm:mt-1"
           >
             {loading ? 'Posting...' : 'Post'}
           </button>

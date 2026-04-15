@@ -327,7 +327,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
     return () => document.removeEventListener('click', handleGlobalClick);
   }, [isMenuOpen]);
 
-  const isOwnPost = user?.username === currentUser?.username;
+  const isOwnPost = Boolean((user?._id && currentUser?._id && String(user._id) === String(currentUser._id)) || (user?.username && currentUser?.username && user?.username === currentUser?.username));
 
   const displayUser = isRepost && originalPost ? originalPost.userId : user;
   const displayContent = isRepost && originalPost ? originalPost.content : content;
@@ -425,7 +425,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
 
   return (
     <div
-      className={`bg-white rounded-2xl shadow-sm border overflow-hidden group hover:shadow-md transition-shadow duration-300 ${
+      className={`bg-white rounded-2xl shadow-sm border group hover:shadow-md transition-shadow duration-300 ${
         isPinnedDisplay ? 'border-primary/30 ring-1 ring-primary/10' : 'border-gray-200'
       } ${isEventCard ? 'ring-1 ring-amber-200/70 bg-gradient-to-b from-amber-50/35 to-white' : ''} ${isArticleCard ? 'ring-1 ring-orange-200/60 bg-gradient-to-b from-orange-50/30 to-white' : ''} ${isCodeCard ? 'ring-1 ring-violet-200/60 bg-gradient-to-b from-violet-50/30 to-white' : ''} ${isMediaCard ? 'ring-1 ring-sky-200/60' : ''} mb-4`}
     >
@@ -566,7 +566,7 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
               className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-primary hover:border-blue-200 hover:bg-blue-100/70 transition-colors"
             >
               <Hash className="w-3 h-3" />
-              #{tag}
+              {tag}
             </Link>
           ))}
         </div>
