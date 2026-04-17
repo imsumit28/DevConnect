@@ -1,9 +1,9 @@
 import React, { useState, useRef, useContext, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 import PostInput from '../components/PostInput';
-import { Plus, Edit2, Camera, Users, CheckCircle2, Circle, Award, Send, MessageSquare, MoreHorizontal, Clock, X, Pin, FileText, Crop, ZoomIn, MoveHorizontal, MoveVertical, RotateCcw } from 'lucide-react';
+import { Plus, Edit2, Camera, Users, CheckCircle2, Circle, Award, Send, MessageSquare, MoreHorizontal, Clock, X, Pin, FileText, Crop, ZoomIn, MoveHorizontal, MoveVertical, RotateCcw, Share2, Link2, Flag, Ban, UserPen } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
@@ -16,6 +16,7 @@ import ConnectionsModal from '../components/ConnectionsModal';
 const Profile = () => {
   const { user: currentUser, updateUser } = useContext(AuthContext); 
   const { username } = useParams();
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [profileUser, setProfileUser] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -63,6 +64,7 @@ const Profile = () => {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewerImageUrl, setViewerImageUrl] = useState('');
   const [viewerTitle, setViewerTitle] = useState('');
+  const [isProfileActionMenuOpen, setIsProfileActionMenuOpen] = useState(false);
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [cropTarget, setCropTarget] = useState('profile');
   const [cropImageSrc, setCropImageSrc] = useState('');
@@ -74,6 +76,7 @@ const Profile = () => {
   const [isCropping, setIsCropping] = useState(false);
   const [isCropDragging, setIsCropDragging] = useState(false);
   const cropDragRef = useRef({ active: false, startX: 0, startY: 0, originX: 0, originY: 0 });
+  const profileActionMenuRef = useRef(null);
   const chatEndRef = React.useRef(null);
   const getEntityId = (value) => {
     if (!value) return '';
@@ -105,6 +108,34 @@ const Profile = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [username]);
+
+  useEffect(() => {
+    setIsProfileActionMenuOpen(false);
+  }, [username]);
+
+  useEffect(() => {
+    if (!isProfileActionMenuOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!profileActionMenuRef.current) return;
+      if (!profileActionMenuRef.current.contains(event.target)) {
+        setIsProfileActionMenuOpen(false);
+      }
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsProfileActionMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isProfileActionMenuOpen]);
 
   useEffect(() => {
     const mergePostUpdate = (existingPost, incomingPost) => {
@@ -905,6 +936,74 @@ const Profile = () => {
     }
   };
 
+  const getProfileShareLink = () => {
+    const profileUsername = fullDisplayUser?.username || username || currentUser?.username || '';
+    return `${window.location.origin}/profile/${encodeURIComponent(profileUsername)}`;
+  };
+
+  const handleProfileLinkCopy = async () => {
+    const profileLink = getProfileShareLink();
+    try {
+      await navigator.clipboard.writeText(profileLink);
+      showToast('Profile link copied!');
+    } catch (error) {
+      console.error('Failed to copy profile link', error);
+      showToast('Failed to copy profile link', 'error');
+    } finally {
+      setIsProfileActionMenuOpen(false);
+    }
+  };
+
+  const handleProfileShare = async () => {
+    const profileLink = getProfileShareLink();
+    const profileName = fullDisplayUser?.name || fullDisplayUser?.username || 'DevConnect user';
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${profileName} on DevConnect`,
+          text: `Check out ${profileName}'s profile on DevConnect`,
+          url: profileLink,
+        });
+        showToast('Profile shared');
+      } else {
+        await navigator.clipboard.writeText(profileLink);
+        showToast('Profile link copied!');
+      }
+    } catch (error) {
+      if (error?.name !== 'AbortError') {
+        console.error('Failed to share profile', error);
+        showToast('Could not share profile', 'error');
+      }
+    } finally {
+      setIsProfileActionMenuOpen(false);
+    }
+  };
+
+  const handleProfileEditFromMenu = () => {
+    setIsProfileActionMenuOpen(false);
+    if (isOwnProfile) {
+      openEditModal();
+      return;
+    }
+    showToast('You can edit only your own profile.', 'error');
+  };
+
+  const handleProfileReport = () => {
+    setIsProfileActionMenuOpen(false);
+    showToast(`Report submitted for @${fullDisplayUser?.username || 'user'}.`);
+  };
+
+  const handleProfileBlock = () => {
+    setIsProfileActionMenuOpen(false);
+    if (!isOwnProfile && fullDisplayUser?._id) {
+      setSuggestedUsers((prev) => prev.filter((user) => String(user?._id) !== String(fullDisplayUser._id)));
+    }
+    showToast(`Blocked @${fullDisplayUser?.username || 'user'} (local).`);
+    if (!isOwnProfile) {
+      navigate('/');
+    }
+  };
+
   // Get the cover image style
   const coverStyle = resolvedCoverPic
     ? { backgroundImage: `url(${resolvedCoverPic})`, backgroundSize: 'cover', backgroundPosition: 'center' }
@@ -917,10 +1016,10 @@ const Profile = () => {
       <main className="max-w-4xl mx-auto px-3 sm:px-4 mt-4 flex flex-col gap-4 animate-fade-in">
         
         {/* Profile Header Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible hover:shadow-xl transition-all duration-300">
           {/* Cover */}
           <div
-            className="h-32 sm:h-40 md:h-48 w-full relative cursor-pointer group"
+            className="h-32 sm:h-40 md:h-48 w-full relative cursor-pointer group rounded-t-2xl overflow-hidden"
             style={coverStyle}
             onClick={() => (isOwnProfile ? openMediaActions('cover') : openFullImageByType('cover'))}
             title="Cover photo options"
@@ -1087,9 +1186,67 @@ const Profile = () => {
                       <Send className="w-4 h-4" />
                       Message
                     </button>
-                    <button className="border-2 border-gray-200 text-gray-500 font-semibold p-2.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
+                    <div ref={profileActionMenuRef} className="relative w-full sm:w-auto flex justify-center sm:justify-end">
+                      <button
+                        onClick={() => setIsProfileActionMenuOpen((prev) => !prev)}
+                        className="border-2 border-gray-200 text-gray-500 font-semibold p-2.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
+                        title="Profile options"
+                        aria-label="Open profile options"
+                        aria-haspopup="menu"
+                        aria-expanded={isProfileActionMenuOpen}
+                      >
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
+
+                      {isProfileActionMenuOpen && (
+                        <div
+                          className="absolute right-0 top-full mt-2 z-[90] min-w-[220px] overflow-hidden rounded-[10px] border border-gray-200 bg-white shadow-[0_14px_32px_rgba(15,23,42,0.16)]"
+                          role="menu"
+                        >
+                          <button
+                            onClick={handleProfileEditFromMenu}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 transition-colors flex items-center gap-2.5 text-left"
+                            role="menuitem"
+                          >
+                            <UserPen className="w-4 h-4 text-gray-500" />
+                            Edit Profile
+                          </button>
+                          <button
+                            onClick={handleProfileShare}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 transition-colors flex items-center gap-2.5 text-left"
+                            role="menuitem"
+                          >
+                            <Share2 className="w-4 h-4 text-gray-500" />
+                            Share Profile
+                          </button>
+                          <button
+                            onClick={handleProfileLinkCopy}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 transition-colors flex items-center gap-2.5 text-left"
+                            role="menuitem"
+                          >
+                            <Link2 className="w-4 h-4 text-gray-500" />
+                            Copy Link
+                          </button>
+                          <div className="mx-3 border-t border-gray-200" />
+                          <button
+                            onClick={handleProfileReport}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors flex items-center gap-2.5 text-left"
+                            role="menuitem"
+                          >
+                            <Flag className="w-4 h-4 text-amber-600" />
+                            Report
+                          </button>
+                          <button
+                            onClick={handleProfileBlock}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2.5 text-left"
+                            role="menuitem"
+                          >
+                            <Ban className="w-4 h-4 text-red-600" />
+                            Block
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
