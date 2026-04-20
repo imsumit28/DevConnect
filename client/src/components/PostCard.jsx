@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy, Check, Hash, FileCode, Gauge, Bookmark } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Send, Pin, FileText, MoreHorizontal, Repeat2, Clock, CornerDownRight, Smile, Sparkles, Code2, Copy, Check, Hash, FileCode, Gauge, Bookmark, Pencil } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { createPortal } from 'react-dom';
 import api from '../services/api';
@@ -37,6 +37,9 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   const [repostLoading, setRepostLoading] = useState(false);
   const [saved, setSaved] = useState(Boolean(isSaved));
   const [saveLoading, setSaveLoading] = useState(false);
+  const [isInlineEditing, setIsInlineEditing] = useState(false);
+  const [inlineEditText, setInlineEditText] = useState('');
+  const [inlineEditLoading, setInlineEditLoading] = useState(false);
   const [activeReplyCommentId, setActiveReplyCommentId] = useState('');
   const [replyDraftByComment, setReplyDraftByComment] = useState({});
   const [commentActionLoadingId, setCommentActionLoadingId] = useState('');
@@ -310,6 +313,45 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
     }
   };
 
+  const handleEdit = () => {
+    if (!canInlineEditPost) return;
+    setIsMenuOpen(false);
+    setIsInlineEditing(true);
+    setInlineEditText(String(displayContent || ''));
+  };
+
+  const handleCancelInlineEdit = () => {
+    setIsInlineEditing(false);
+    setInlineEditText(String(displayContent || ''));
+  };
+
+  const handleInlineUpdate = async () => {
+    if (!canInlineEditPost || inlineEditLoading) return;
+
+    const trimmedText = String(inlineEditText || '').trim();
+    if (!trimmedText) {
+      showToast('Post content cannot be empty', 'error');
+      return;
+    }
+
+    if (trimmedText === String(displayContent || '').trim()) {
+      setIsInlineEditing(false);
+      return;
+    }
+
+    setInlineEditLoading(true);
+    try {
+      await api.put(`/posts/${postId}`, { content: trimmedText });
+      showToast('Post updated');
+      setIsInlineEditing(false);
+    } catch (err) {
+      console.error(err);
+      showToast(err?.response?.data?.message || 'Failed to update post', 'error');
+    } finally {
+      setInlineEditLoading(false);
+    }
+  };
+
   const handleCopyCode = (codeText) => {
     navigator.clipboard.writeText(codeText);
     setCodeCopied(true);
@@ -328,12 +370,14 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
   }, [isMenuOpen]);
 
   const isOwnPost = Boolean((user?._id && currentUser?._id && String(user._id) === String(currentUser._id)) || (user?.username && currentUser?.username && user?.username === currentUser?.username));
+  const canEditPost = isOwnPost && !isRepost && !isActivity;
 
   const displayUser = isRepost && originalPost ? originalPost.userId : user;
   const displayContent = isRepost && originalPost ? originalPost.content : content;
   const displayImage = resolveMediaUrl(isRepost && originalPost ? originalPost.image : image);
   const displayVideo = resolveMediaUrl(isRepost && originalPost ? originalPost.video : video);
   const displayPostType = isRepost && originalPost ? originalPost.postType : postType;
+  const canInlineEditPost = canEditPost && displayPostType !== 'event' && displayPostType !== 'code';
   const displayArticleTitle = isRepost && originalPost ? originalPost.articleTitle : articleTitle;
   const displayEventTitle = isRepost && originalPost ? originalPost.eventTitle : eventTitle;
   const displayEventDate = isRepost && originalPost ? originalPost.eventDate : eventDate;
@@ -491,6 +535,15 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
                     <Pin className="w-4 h-4 text-gray-500" /> {user?.pinnedPost === postId ? 'Unpin from profile' : 'Pin this post'}
                   </button>
                 )}
+                {canInlineEditPost && (
+                  <button
+                    onClick={handleEdit}
+                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50"
+                  >
+                    <Pencil className="w-4 h-4 text-gray-500" />
+                    Edit post
+                  </button>
+                )}
                 {!isActivity && (
                   <button
                     onClick={handleToggleSave}
@@ -551,9 +604,39 @@ const PostCard = ({ postId, user, time, content, image, video, likesList = [], c
 
       {displayPostType !== 'event' && displayPostType !== 'code' && (
         <div className={`px-4 pb-2 ${isArticleCard ? 'pb-4' : ''}`}>
-          <p className={`text-gray-800 whitespace-pre-wrap ${isArticleCard ? 'line-clamp-4 text-[16px] leading-7 bg-slate-50 border border-slate-200 rounded-xl p-3.5' : 'text-[15px] leading-7'}`}>
-            {renderContentWithHashtags(displayContent)}
-          </p>
+          {isInlineEditing ? (
+            <div className={`${isArticleCard ? 'bg-slate-50 border border-slate-200 rounded-xl p-3.5' : ''}`}>
+              <textarea
+                rows={isArticleCard ? 6 : 4}
+                value={inlineEditText}
+                onChange={(e) => setInlineEditText(e.target.value)}
+                className="w-full resize-y min-h-[96px] rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-[15px] leading-7 text-gray-800 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                placeholder="Edit your post..."
+              />
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancelInlineEdit}
+                  disabled={inlineEditLoading}
+                  className="border border-gray-300 text-gray-700 px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-gray-50 disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleInlineUpdate}
+                  disabled={inlineEditLoading}
+                  className="bg-primary text-white px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {inlineEditLoading ? 'Updating...' : 'Update'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className={`text-gray-800 whitespace-pre-wrap ${isArticleCard ? 'line-clamp-4 text-[16px] leading-7 bg-slate-50 border border-slate-200 rounded-xl p-3.5' : 'text-[15px] leading-7'}`}>
+              {renderContentWithHashtags(displayContent)}
+            </p>
+          )}
         </div>
       )}
 

@@ -53,6 +53,7 @@ const Profile = () => {
   const [articlePosts, setArticlePosts] = useState([]);
   const [savedPosts, setSavedPosts] = useState([]);
   const [pinnedPost, setPinnedPost] = useState(null);
+  const [editingPostDraft, setEditingPostDraft] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -363,6 +364,63 @@ const Profile = () => {
       else existingIds.delete(String(targetPostId));
       updateUser({ savedPosts: [...existingIds] });
     }
+  };
+
+  const applyEditedPostLocally = (updatedPost) => {
+    const updatedId = String(updatedPost?._id || '');
+    if (!updatedId) return;
+
+    const mergeUpdatedPost = (list = []) =>
+      list.map((post) => {
+        const postId = String(post?._id || '');
+        const originalId = String(post?.originalPost?._id || post?.originalPost || '');
+        if (postId === updatedId || originalId === updatedId) {
+          return {
+            ...post,
+            ...updatedPost,
+            userId: updatedPost.userId || post.userId,
+            originalPost: updatedPost.originalPost || post.originalPost,
+          };
+        }
+        return post;
+      });
+
+    setPosts((current) => mergeUpdatedPost(current));
+    setLikedPosts((current) => mergeUpdatedPost(current));
+    setCommentedPosts((current) => mergeUpdatedPost(current));
+    setArticlePosts((current) => mergeUpdatedPost(current));
+    setPinnedPost((current) => {
+      if (!current) return current;
+      const currentId = String(current?._id || '');
+      const currentOriginalId = String(current?.originalPost?._id || current?.originalPost || '');
+      if (currentId === updatedId || currentOriginalId === updatedId) {
+        return {
+          ...current,
+          ...updatedPost,
+          userId: updatedPost.userId || current.userId,
+          originalPost: updatedPost.originalPost || current.originalPost,
+        };
+      }
+      return current;
+    });
+  };
+
+  const handleEditRequest = ({ postId, content }) => {
+    const targetId = String(postId || '');
+    if (!targetId) return;
+    setEditingPostDraft({
+      postId: targetId,
+      content: String(content || ''),
+    });
+  };
+
+  const handleEditCancel = () => {
+    setEditingPostDraft(null);
+  };
+
+  const handleEditSaved = (updatedPost) => {
+    setEditingPostDraft(null);
+    applyEditedPostLocally(updatedPost);
   };
 
   // Fetch posts for the displayed user
@@ -1370,7 +1428,13 @@ const Profile = () => {
                 ))}
               </div>
 
-              {isOwnProfile && <PostInput />}
+              {isOwnProfile && (
+                <PostInput
+                  editDraft={editingPostDraft}
+                  onEditCancel={handleEditCancel}
+                  onEditSaved={handleEditSaved}
+                />
+              )}
 
               {/* Pinned Post */}
               {pinnedPost && (
@@ -1401,6 +1465,7 @@ const Profile = () => {
                     hashtags={pinnedPost.hashtags}
                     isSaved={Boolean(pinnedPost.isSaved) || savedPostIds.has(String(pinnedPost._id))}
                     onSavedStateChange={handleSavedStateChange}
+                    onEditRequest={handleEditRequest}
                     isPinnedDisplay={true}
                   />
                 </div>
@@ -1450,6 +1515,7 @@ const Profile = () => {
                           isRepost={post.isRepost}
                           originalPost={post.originalPost}
                           onSavedStateChange={handleSavedStateChange}
+                          onEditRequest={handleEditRequest}
                           alreadyReposted={
                             (Boolean(post?.isRepost) && String(post?.userId?._id || post?.userId || '') === String(currentUser?._id || currentUser?.id || '')) ||
                             selfRepostedOriginalIds.has(String(post._id))
@@ -1499,6 +1565,7 @@ const Profile = () => {
                         isRepost={post.isRepost}
                         originalPost={post.originalPost}
                         onSavedStateChange={handleSavedStateChange}
+                        onEditRequest={handleEditRequest}
                       />
                     </div>
                   ))
@@ -1544,6 +1611,7 @@ const Profile = () => {
                         isRepost={post.isRepost}
                         originalPost={post.originalPost}
                         onSavedStateChange={handleSavedStateChange}
+                        onEditRequest={handleEditRequest}
                       />
                     </div>
                   ))
@@ -1589,6 +1657,7 @@ const Profile = () => {
                         isRepost={post.isRepost}
                         originalPost={post.originalPost}
                         onSavedStateChange={handleSavedStateChange}
+                        onEditRequest={handleEditRequest}
                       />
                     </div>
                   ))
@@ -1634,6 +1703,7 @@ const Profile = () => {
                         isRepost={post.isRepost}
                         originalPost={post.originalPost}
                         onSavedStateChange={handleSavedStateChange}
+                        onEditRequest={handleEditRequest}
                       />
                     </div>
                   ))
@@ -1681,6 +1751,7 @@ const Profile = () => {
                         isRepost={post.isRepost}
                         originalPost={post.originalPost}
                         onSavedStateChange={handleSavedStateChange}
+                        onEditRequest={handleEditRequest}
                       />
                     </div>
                   ))

@@ -434,6 +434,38 @@ exports.addCommentReply = async (req, res) => {
   }
 };
 
+// @desc    Update a post
+// @route   PUT /api/posts/:id
+// @access  Private
+exports.updatePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (post.userId.toString() !== req.user.toString()) {
+      return res.status(403).json({ message: 'You can only edit your own posts' });
+    }
+
+    const nextContent = String(req.body?.content || '').trim();
+    if (!nextContent) {
+      return res.status(400).json({ message: 'Post content is required' });
+    }
+
+    post.content = nextContent;
+    await post.save();
+
+    const updatedPost = await withFullPostDataById(req.params.id);
+    const serializedPost = serializePost(updatedPost);
+    req.app.get('io').emit('postUpdated', serializedPost);
+
+    return res.status(200).json(serializedPost);
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // @desc    Delete a post
 // @route   DELETE /api/posts/:id
 // @access  Private

@@ -29,10 +29,11 @@ const DEV_EVENTS = [
   { id: 15, title: 'Next.js Conf', date: '2026-10-25', location: 'Virtual', desc: 'Vercel\'s annual Next.js conference' },
 ];
 
-const PostInput = ({ onPostCreated }) => {
+const PostInput = ({ onPostCreated, editDraft = null, onEditCancel = null, onEditSaved = null }) => {
   const { user } = useContext(AuthContext);
   const { showToast } = useToast();
   const [content, setContent] = useState('');
+  const [editingPostId, setEditingPostId] = useState('');
   const [image, setImage] = useState(null);
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -65,6 +66,29 @@ const PostInput = ({ onPostCreated }) => {
   const [codeDifficulty, setCodeDifficulty] = useState('Intermediate');
   const [codeReadTime, setCodeReadTime] = useState('3');
   const [codeDescription, setCodeDescription] = useState('');
+
+  useEffect(() => {
+    const targetPostId = String(editDraft?.postId || '');
+    if (!targetPostId) return;
+
+    const nextContent = String(editDraft?.content || '');
+    setEditingPostId(targetPostId);
+    setContent(nextContent);
+    setImage(null);
+    setVideo(null);
+    setHashtagSuggestions([]);
+    setShowHashtagSuggestions(false);
+    setActiveSuggestionIndex(0);
+
+    requestAnimationFrame(() => {
+      const input = postInputRef.current;
+      if (!input) return;
+      input.focus();
+      input.style.height = 'auto';
+      input.style.height = `${Math.min(input.scrollHeight, 300)}px`;
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, [editDraft?.postId, editDraft?.content]);
 
   const getActiveHashtagQuery = (value, cursorPosition) => {
     const uptoCursor = value.slice(0, cursorPosition);
@@ -150,8 +174,21 @@ const PostInput = ({ onPostCreated }) => {
     e.preventDefault();
     if (!content.trim() && !image && !video) return;
 
+    const isEditingNow = Boolean(editingPostId);
     setLoading(true);
     try {
+      if (isEditingNow) {
+        const res = await api.put(`/posts/${editingPostId}`, { content: content.trim() });
+        setContent('');
+        setEditingPostId('');
+        if (postInputRef.current) {
+          postInputRef.current.style.height = 'auto';
+        }
+        if (onEditSaved) onEditSaved(res.data);
+        showToast('Post updated');
+        return;
+      }
+
       let imageUrl = '';
       let videoUrl = '';
 
@@ -195,11 +232,26 @@ const PostInput = ({ onPostCreated }) => {
       setVideo(null);
       if (onPostCreated) onPostCreated(res.data);
     } catch (error) {
-      console.error('Failed to create post', error);
-      showToast(error.response?.data?.message || 'Failed to create post', 'error');
+      const fallbackMessage = isEditingNow ? 'Failed to update post' : 'Failed to create post';
+      const serverMessage =
+        error?.response?.data?.message ||
+        (typeof error?.response?.data === 'string' ? error.response.data : '') ||
+        error?.message ||
+        '';
+      console.error(isEditingNow ? 'Failed to update post' : 'Failed to create post', error);
+      showToast(serverMessage || fallbackMessage, 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPostId('');
+    setContent('');
+    if (postInputRef.current) {
+      postInputRef.current.style.height = 'auto';
+    }
+    if (onEditCancel) onEditCancel();
   };
 
   const handleImageChange = (e) => {
@@ -347,15 +399,25 @@ const PostInput = ({ onPostCreated }) => {
               setTimeout(() => setShowHashtagSuggestions(false), 120);
             }}
             onKeyDown={handleContentKeyDown}
-            placeholder="Start a post..."
+            placeholder={editingPostId ? 'Edit your post...' : 'Start a post...'}
             className={`flex-1 min-w-0 bg-gray-100 hover:bg-gray-200 border border-transparent focus:border-gray-300 focus:bg-white px-3 sm:px-5 py-2.5 sm:py-3 text-gray-700 outline-none transition-all text-sm sm:text-base resize-none overflow-y-auto leading-relaxed [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${content.length > 0 || (postInputRef.current && postInputRef.current.scrollHeight > 60) ? 'rounded-2xl min-h-[50px]' : 'rounded-full h-10 sm:h-12'}`}
           />
+          {editingPostId && (
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              disabled={loading}
+              className="border border-gray-300 text-gray-700 font-semibold px-3 sm:px-4 py-2 rounded-full hover:bg-gray-50 disabled:opacity-50 transition-colors active:scale-95 shrink-0 whitespace-nowrap text-sm sm:text-base mt-0.5 sm:mt-1"
+            >
+              Cancel
+            </button>
+          )}
           <button 
             type="submit" 
             disabled={(!content.trim() && !image && !video) || loading}
             className="bg-primary text-white font-semibold px-3 sm:px-4 py-2 rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors active:scale-95 shrink-0 whitespace-nowrap text-sm sm:text-base mt-0.5 sm:mt-1"
           >
-            {loading ? 'Posting...' : 'Post'}
+            {loading ? (editingPostId ? 'Updating...' : 'Posting...') : (editingPostId ? 'Update' : 'Post')}
           </button>
         </form>
 
@@ -413,6 +475,7 @@ const PostInput = ({ onPostCreated }) => {
           </div>
         )}
         
+        {!editingPostId && (
         <div className="grid grid-cols-5 gap-1 sm:gap-2 mt-3 pt-2">
           <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleImageChange} />
           <input type="file" accept="video/*" ref={videoInputRef} className="hidden" onChange={handleVideoChange} />
@@ -458,6 +521,7 @@ const PostInput = ({ onPostCreated }) => {
             <span className="hidden sm:inline">Article</span>
           </button>
         </div>
+        )}
       </div>
 
       {/* ── EVENT MODAL ── */}

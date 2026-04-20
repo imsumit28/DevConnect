@@ -10,6 +10,7 @@ const {
   addComment,
   toggleCommentLike,
   addCommentReply,
+  updatePost,
   deletePost,
   logActivity,
   togglePinPost,
@@ -27,6 +28,7 @@ router.get('/user/:userId', protect, getPostsByUserId);
 router.post('/activity', protect, logActivity);
 router.put('/:id/like', protect, likePost);
 router.put('/:id/pin', protect, togglePinPost);
+router.put('/:id', protect, updatePost);
 router.post('/:id/repost', protect, repostPost);
 router.post('/:id/comment', protect, addComment);
 router.put('/:id/comments/:commentId/like', protect, toggleCommentLike);

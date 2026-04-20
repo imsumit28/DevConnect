@@ -26,6 +26,7 @@ const Home = () => {
   const [topOrderIds, setTopOrderIds] = useState([]);
   const [welcomeVariant, setWelcomeVariant] = useState('');
   const [isWelcomeClosing, setIsWelcomeClosing] = useState(false);
+  const [editingPostDraft, setEditingPostDraft] = useState(null);
   const currentUserId = currentUser?._id || currentUser?.id || '';
 
   const closeWelcome = () => setIsWelcomeClosing(true);
@@ -211,6 +212,42 @@ const Home = () => {
     );
   };
 
+  const handleEditRequest = ({ postId, content }) => {
+    const targetId = String(postId || '');
+    if (!targetId) return;
+    setEditingPostDraft({
+      postId: targetId,
+      content: String(content || ''),
+    });
+  };
+
+  const handleEditCancel = () => {
+    setEditingPostDraft(null);
+  };
+
+  const handleEditSaved = (updatedPost) => {
+    setEditingPostDraft(null);
+    const updatedId = String(updatedPost?._id || '');
+    if (!updatedId) return;
+    setPosts((current) =>
+      current.map((post) => {
+        const postId = post?._id ? String(post._id) : '';
+        const originalId = post?.originalPost?._id
+          ? String(post.originalPost._id)
+          : (post?.originalPost ? String(post.originalPost) : '');
+        if (postId === updatedId || originalId === updatedId) {
+          return {
+            ...post,
+            ...updatedPost,
+            userId: updatedPost.userId || post.userId,
+            originalPost: updatedPost.originalPost || post.originalPost,
+          };
+        }
+        return post;
+      })
+    );
+  };
+
   const visiblePosts = useMemo(
     () =>
       filteredPosts.filter((post) => {
@@ -270,7 +307,12 @@ const Home = () => {
             </div>
           )}
 
-          <PostInput onPostCreated={handlePostCreated} />
+          <PostInput
+            onPostCreated={handlePostCreated}
+            editDraft={editingPostDraft}
+            onEditCancel={handleEditCancel}
+            onEditSaved={handleEditSaved}
+          />
 
           {/* Mobile Discover Section */}
           <div className="lg:hidden">
@@ -338,6 +380,7 @@ const Home = () => {
                 originalPost={post.originalPost}
                 alreadyReposted={Boolean(post.viewerHasReposted) || repostedOriginalIds.has(String(post._id))}
                 onRepostStateChange={handleRepostStateChange}
+                onEditRequest={handleEditRequest}
               />
             ))
           ) : (
