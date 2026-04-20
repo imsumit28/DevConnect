@@ -15,23 +15,34 @@ DevConnect is a modern developer social network inspired by LinkedIn, built for 
 
 ## Features
 
-- JWT auth with secure login/register flow
-- Rich post system: Create posts with text, images, video, events, articles, and syntax-highlighted code snippets
-- Owner-only post controls: only the author can edit/delete/pin their posts
-- Inline post editing: edit content directly inside the same post card with Update/Cancel actions
-- Real-time likes, comments, reposts, post updates/deletes, and notifications (Socket.io)
+### Authentication & Security
+- JWT-based authentication with secure login and registration
+- Protected API routes and user-scoped actions
+
+### Posts & Engagement
+- Create rich posts: text, image, video, article, event, and code snippet
+- Owner-only post controls: edit, delete, and pin
+- Inline post editing directly within the post card
+- Real-time likes, comments, reposts, updates, and deletes via Socket.io
 - Threaded comments with comment likes and replies
-- Save/unsave posts with a dedicated Saved activity tab on profile
+- Save/unsave posts with a dedicated Saved tab
+
+### Networking & Profile
+- LinkedIn-style follow requests and connection management
+- Connections modal for followers, following, and pending requests
+- Privacy-first networking: users must be connected to view each other's connections
+- Profile and cover image upload with interactive cropper (Cloudinary)
+- Pinned posts and activity-based profile tabs
+
+### Messaging & Notifications
+- Real-time direct messaging
+- Real-time notification delivery for social interactions
+
+### Discovery & UX
+- Username search
 - Hashtag suggestions while typing and hashtag-based feed filtering
-- Professional networking system with LinkedIn-style follow requests
-- Dedicated Connections modal to manage followers, following, and pending requests
-- Privacy-first networking: Must be connected to a user to view their connections
-- Profile system with interactive avatar/cover image cropper and upload to Cloudinary
-- Pinned posts and robust profile activity tabs
-- Direct messaging with real-time delivery
-- Search users by username
 - Trending topic filters for feed exploration
-- Responsive, modern UI with dynamic interaction states and polished animations
+- Responsive UI with polished transitions and interaction states
 
 ## Screenshots
 
