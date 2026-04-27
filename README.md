@@ -1,48 +1,47 @@
 # DevConnect
 
-DevConnect is a modern developer social network inspired by LinkedIn, built for engineers to share work, connect with peers, and grow careers.
+**Bridging the gap between code and community.**
 
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
-![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs)
-![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb)
-![Socket.io](https://img.shields.io/badge/Socket.io-Real--time-010101?logo=socketdotio)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-06B6D4?logo=tailwindcss)
+DevConnect is a high-performance, real-time ecosystem designed for the modern engineer. It transcends traditional social networking by providing a dedicated space where developers don't just "connect"—they **collaborate, innovate, and grow together.** 
 
-## Demo
+Built with the MERN stack and real-time synchronization, DevConnect serves as a digital headquarters for engineering synergy, allowing developers to share complex logic, mentor peers, and discover their next big project or teammate.
 
-- Live App: https://devconnect2026.vercel.app/
-- API Base: `http://localhost:5000/api`
+[![Live Demo](https://img.shields.io/badge/Live-Demo-0b6bcb?style=for-the-badge)](https://devconnect2026.vercel.app/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=nodedotjs)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
+[![Socket.io](https://img.shields.io/badge/Socket.io-Real--time-010101?style=for-the-badge&logo=socketdotio)](https://socket.io/)
 
-## Features
+---
 
-### Authentication & Security
-- JWT-based authentication with secure login and registration
-- Protected API routes and user-scoped actions
+## The Collaborative Mission
 
-### Posts & Engagement
-- Create rich posts: text, image, video, article, event, and code snippet
-- Owner-only post controls: edit, delete, and pin
-- Inline post editing directly within the post card
-- Real-time likes, comments, reposts, updates, and deletes via Socket.io
-- Threaded comments with comment likes and replies
-- Save/unsave posts with a dedicated Saved tab
+DevConnect is built on the philosophy that the best software is born from collective intelligence. Our platform focuses on three pillars:
+1.  **Code Transparency**: Share and discuss raw logic through specialized code-post types.
+2.  **Engineering Synergy**: Real-time tools that turn passive following into active collaboration.
+3.  **Developer Growth**: A curated environment free from general social noise, focused strictly on tech-driven progress.
 
-### Networking & Profile
-- LinkedIn-style follow requests and connection management
-- Connections modal for followers, following, and pending requests
-- Privacy-first networking: users must be connected to view each other's connections
-- Profile and cover image upload with interactive cropper (Cloudinary)
-- Pinned posts and activity-based profile tabs
+---
 
-### Messaging & Notifications
-- Real-time direct messaging
-- Real-time notification delivery for social interactions
+## Core Features
 
-### Discovery & UX
-- Username search
-- Hashtag suggestions while typing and hashtag-based feed filtering
-- Trending topic filters for feed exploration
-- Responsive UI with polished transitions and interaction states
+### Collaborative Content
+- **Specialized Code Snippets**: Share algorithms and logic with built-in syntax highlighting for instant peer review and collaboration.
+- **Dynamic Articles & Events**: Publish deep-dives into tech stacks or organize collaborative hackathons and meetups.
+- **Rich Media Support**: Demonstrate UI/UX or architectural flows through high-quality video and image sharing.
+
+### Real-Time Interaction Ecosystem
+- **Live Chatting**: Fully integrated messaging system for rapid one-on-one technical discussion and real-time collaboration.
+- **Instant Feed Updates**: Powered by Socket.io, witness the pulse of the community with live likes, comments, and reposts.
+- **Smart Notifications**: Never miss a collaboration request, follow, or a comment on your latest snippet.
+
+### Professional Networking & Discovery
+- **Real-Time Connections**: Dynamic follow and following system with instant updates and connection management.
+- **Developer Profiles**: Show off your stack, pinned contributions, and recent activity.
+- **Hashtag-Driven Exploration**: Navigate through specific technologies (e.g., #react, #rust) to find relevant collaborators.
+- **Sticky Desktop UX**: Optimized layout with sticky sidebars ensures global navigation is always one click away during deep scrolls.
+
+---
 
 ## Screenshots
 
@@ -67,90 +66,53 @@ DevConnect is a modern developer social network inspired by LinkedIn, built for 
 ### 7. Home Feed
 ![Home Feed Feed](docs/screenshots/07-home-feed-feed.png)
 
-## Tech Stack
+---
+
+## Technical Stack
 
 ### Frontend
-- React 19
-- Vite
-- Tailwind CSS v4
-- React Router
-- Axios
-- Socket.io Client
+- **Framework**: React 19 (Vite)
+- **Styling**: Tailwind CSS v4 (Glassmorphism & Micro-animations)
+- **Networking**: Axios with global **401 handling** for secure session management.
+- **Real-time**: Socket.io-client for bi-directional event handling.
 
 ### Backend
-- Node.js
-- Express.js
-- MongoDB + Mongoose
-- Socket.io
-- JWT + bcrypt
-- Multer + Cloudinary
+- **Core**: Node.js & Express.js
+- **Database**: MongoDB (Mongoose ODM)
+- **Auth**: Secure JWT-based authentication with bcrypt hashing.
+- **Media**: Cloudinary integration for scalable asset management.
+
+---
 
 ## Quick Start
 
-### Prerequisites
-- Node.js 18+
-- MongoDB (local or Atlas)
-- Cloudinary account
-
-### 1. Clone
+### 1. Installation
 ```bash
-git clone https://github.com/yourusername/devconnect.git
-cd devconnect
+# Clone the repository
+git clone https://github.com/imsumit28/DevConnect.git
+cd DevConnect
+
+# Setup Backend & Frontend
+cd server && npm install
+cd ../client && npm install
 ```
 
-### 2. Setup backend
+### 2. Configuration
+Create a `.env` file in the `server` directory with your `MONGO_URI`, `JWT_SECRET`, and `CLOUDINARY` credentials.
+
+### 3. Execution
 ```bash
-cd server
-npm install
+# Terminal 1 (Server)
+cd server && npm run dev
+
+# Terminal 2 (Client)
+cd client && npm run dev
 ```
 
-Create `server/.env`:
-```env
-MONGO_URI=your_mongo_uri
-JWT_SECRET=your_jwt_secret
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-CLIENT_URL=http://localhost:5173
-```
-
-### 3. Setup frontend
-```bash
-cd ../client
-npm install
-```
-
-### 4. Run app
-```bash
-# Terminal 1
-cd server
-npm run dev
-
-# Terminal 2
-cd client
-npm run dev
-```
-
-Open `http://localhost:5173`.
-
-## Project Structure
-
-```text
-devconnect/
-  client/
-    src/
-      components/
-      context/
-      pages/
-      services/
-      utils/
-  server/
-    controllers/
-    middleware/
-    models/
-    routes/
-```
+---
 
 ## License
+Distributed under the MIT License. Built for developers, by developers.
 
-MIT
+---
+**DevConnect: Where Code Meets Community.**
