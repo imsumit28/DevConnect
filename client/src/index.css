@@ -29,7 +29,11 @@ body,
 #root {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+}
+
+/* Contain horizontal overflow without breaking position:sticky */
+#root {
+  overflow-x: clip;
 }
 
 @keyframes slide-up {
@@ -356,4 +360,13 @@ img {
   .auth-logo {
     max-width: 240px;
   }
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

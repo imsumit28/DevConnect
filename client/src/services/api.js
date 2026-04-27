@@ -19,4 +19,20 @@ api.interceptors.request.use(
   }
 );
 
+// Add a response interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Clear local storage if unauthorized
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Note: We don't necessarily redirect here because AuthContext
+      // will detect the null user/token and handle it via ProtectedRoute.
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

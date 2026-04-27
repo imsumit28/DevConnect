@@ -22,6 +22,13 @@ window.addEventListener('error', (event) => {
 
 window.addEventListener('unhandledrejection', (event) => {
   const reason = event?.reason;
+  
+  // Ignore Axios 401 errors as they are handled by the interceptor or AuthContext
+  if (reason?.isAxiosError && reason?.response?.status === 401) {
+    event.preventDefault(); // Prevent browser console log if possible
+    return;
+  }
+
   renderFatal('Unhandled promise rejection while loading DevConnect', reason?.stack || reason?.message || String(reason));
 });
 

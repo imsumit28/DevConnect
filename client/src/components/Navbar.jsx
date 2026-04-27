@@ -44,6 +44,8 @@ const Navbar = () => {
       api.get('/notifications').then(res => {
         setNotifications(res.data);
         setUnreadCount(res.data.filter(n => !n.isRead).length);
+      }).catch(err => {
+        console.error("Failed to fetch notifications", err);
       });
 
       return () => socket.disconnect();

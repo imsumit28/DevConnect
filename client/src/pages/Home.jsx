@@ -270,7 +270,7 @@ const Home = () => {
       <main className="max-w-6xl mx-auto px-3 sm:px-4 mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
         
         {/* Left Sidebar (Stacked below on mobile, 3 cols on desktop) */}
-        <div className="order-2 lg:order-1 lg:col-span-3 pb-4 md:pb-8">
+        <div className="order-2 lg:order-1 lg:col-span-3 pb-4 md:pb-8 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto no-scrollbar">
           <Sidebar />
         </div>
 
@@ -391,7 +391,7 @@ const Home = () => {
         </div>
 
         {/* Right Sidebar (Hidden on small screens, shown on lg) */}
-        <div className="hidden lg:block lg:order-3 lg:col-span-3">
+        <div className="hidden lg:block lg:order-3 lg:col-span-3 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto no-scrollbar">
           <RightSidebar activeTag={activeTag} />
         </div>
 
