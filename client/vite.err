@@ -1,5 +1,0 @@
-[2m12:35:26 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mCould not record view AxiosError: Request failed with status code 500
-    at settle (http://localhost:5173/node_modules/.vite/deps/axios.js?v=8307deac:1634:14)
-    at XMLHttpRequest.onloadend (http://localhost:5173/node_modules/.vite/deps/axios.js?v=8307deac:1951:4)
-    at Axios$1.request (http://localhost:5173/node_modules/.vite/deps/axios.js?v=8307deac:2518:37)
-^C
