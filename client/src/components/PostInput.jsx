@@ -108,7 +108,7 @@ const PostInput = ({ onPostCreated, editDraft = null, onEditCancel = null, onEdi
 
     if (!match) return;
 
-    const replaceStart = cursorStart - match[2].length;
+    const replaceStart = cursorStart - match[2].length - 1;
     const nextValue = `${content.slice(0, replaceStart)}${tag} ${afterCursor}`;
     const nextCursor = replaceStart + tag.length + 1;
 
