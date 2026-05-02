@@ -6,6 +6,8 @@ import Auth from './pages/Auth';
 import Messages from './pages/Messages';
 import OAuthCallback from './pages/OAuthCallback';
 import ResetPassword from './pages/ResetPassword';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import AppErrorBoundary from './components/AppErrorBoundary';
@@ -34,6 +36,8 @@ function App() {
               <Route path="/register" element={<Auth />} />
               <Route path="/auth/callback" element={<OAuthCallback />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
             </Routes>
           </Router>
         </AppErrorBoundary>

@@ -44,13 +44,14 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState('idle');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const passwordValid = password.length >= 8;
   const passwordsMatch = mode === 'login' ? true : (confirmPassword.length > 0 ? password === confirmPassword : true);
   const canSubmit = mode === 'login'
     ? emailValid && passwordValid && !loading
-    : emailValid && passwordValid && passwordsMatch && usernameStatus === 'available' && !loading;
+    : emailValid && passwordValid && passwordsMatch && usernameStatus === 'available' && agreedToTerms && !loading;
 
   const strengthScore = useMemo(() => {
     let score = 0;
@@ -395,6 +396,26 @@ const Auth = () => {
                           {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
                         </p>
                       )}
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <input
+                        type="checkbox"
+                        id="terms-agreement"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="w-5 h-5 mt-0.5 text-[#0073b1] border-gray-300 rounded cursor-pointer focus:ring-[#0073b1]"
+                      />
+                      <label htmlFor="terms-agreement" className="text-sm text-gray-700 cursor-pointer">
+                        I agree to the{' '}
+                        <Link to="/terms" className="text-[#0073b1] font-semibold hover:underline" target="_blank" rel="noopener noreferrer">
+                          Terms of Service
+                        </Link>
+                        {' '}and{' '}
+                        <Link to="/privacy" className="text-[#0073b1] font-semibold hover:underline" target="_blank" rel="noopener noreferrer">
+                          Privacy Policy
+                        </Link>
+                      </label>
                     </div>
                   </>
                 )}
